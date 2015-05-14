@@ -5,4 +5,4 @@
  
 ##RandomUA.pm
 
-- Get random User-Agent string (data collected from real Apache logs)
+- Get random User-Agent string (data collected from real Apache logs, about 17.000 different agents, including mobile and search robots)
