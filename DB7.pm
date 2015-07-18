@@ -41,6 +41,13 @@ sub new
 }
 
 # ------------------------------------------------------------------------------
+sub errstr
+{
+    my ( $self ) = @_;
+    return $self->{'error'};
+}
+
+# ------------------------------------------------------------------------------
 sub _e
 {
     my ( $self, $error ) = @_;
@@ -58,7 +65,7 @@ sub add_record
     my %record;
     foreach my $name ( keys %{ $self->{'vars'} } )
     {
-        my $value = $data->{$name} || '';
+        my $value = $data->{$name};
         if( $value )
         {
             my $length = length( $value );
@@ -86,7 +93,7 @@ sub add_record
                     "Invalid LOGICAL value for '$name': '$value'" );
             }
         }
-        $record{$name} = $value;
+        $record{$name} = $value || '';
     }
     push @{ $self->{'records'} }, \%record;
     return undef;
@@ -107,7 +114,7 @@ sub write_file
         or return $self->_e( 'Can not write "' . $self->{file} . '": ' . $! );
     binmode $dbf;
 
-    $self->write_header( $dbf, 1, 0 );
+    $self->_write_header( $dbf, 1, 0 );
 
     foreach my $key ( sort keys %{ $self->{'vars'} } )
     {
@@ -156,7 +163,7 @@ sub write_file
         {
             if( $self->{'vars'}->{$key}->[0] eq 'I' )
             {
-                print $dbf pack( 'l', ( $record->{$key} || 0 ) );
+                print $dbf pack( 'N', ( $record->{$key} || 0 ) );
             }
             else
             {
@@ -173,7 +180,7 @@ sub write_file
 }
 
 # ------------------------------------------------------------------------------
-sub write_header
+sub _write_header
 {
     my ( $self, $dbf ) = @_;
 
@@ -242,7 +249,9 @@ __END__
   my $db7 = new DB7
   (
     {
-      file => 'filename.dbf'
+      file => 'filename.dbf',
+      codepage => 3,
+      language => 'db866ru0'
     },
     {
       INT_FLD  => [ 'I', 4 ],   # integer field, length = 4
@@ -269,7 +278,7 @@ __END__
 
 =head1 DESCRIPTION
 
-This module can write dBase 7 files. MDX (indexes) and MEMO-files are not supported. 
+This module can write dBase 7 files. MDX (indexes) and MEMO are not supported. 
 
 Known field types: 
 
@@ -286,7 +295,7 @@ B<C> character
 
 Options is hash ref, valid fields are:
 
-B<file> - filename to write, required.
+B<file> - filename to write, required
 
 B<codepage> - code page ID, default is 0x01 (CP 437)
 
