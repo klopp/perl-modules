@@ -6,3 +6,7 @@
 ##RandomUA.pm
 
 - Get random User-Agent string (data collected from real Apache logs, about 17.000 different agents, including mobile and search robots)
+
+##DB7.pm
+
+- Create abd write dBase 7 files. MDX (indexes) and MEMO-files are not supported.

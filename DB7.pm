@@ -10,212 +10,225 @@ $VERSION = '1.0';
 # ------------------------------------------------------------------------------
 sub new
 {
-  my ( $class, $opt, $vars ) = @_;
+    my ( $class, $opt, $vars ) = @_;
 
-  my $self = bless $opt;
+    my $self = bless $opt;
 
-  $self->{'vars'}           = $vars;
-  $self->{'record_size'}    = 0;
-  $self->{'header_size'}    = 69;
-  $self->{'records'}        = [];
-  $self->{'error'}          = undef;
-  
-  $self->{'codepage'} ||= 0x01;
-  $self->{'language'} ||= 'DBWINUS0';
+    $self->{'vars'}        = $vars;
+    $self->{'record_size'} = 0;
+    $self->{'header_size'} = 69;
+    $self->{'records'}     = [];
+    $self->{'error'}       = undef;
 
-  foreach my $key ( keys %{$vars} )
-  {
-    if( $vars->{$key}->[0] !~ /^[IDLC]$/ )
+    $self->{'codepage'} ||= 0x01;
+    $self->{'language'} ||= 'DBWINUS0';
+
+    foreach my $key ( keys %{$vars} )
     {
-        $self->{'error'} = "Invalid type '".$vars->{$key}->[0]."' for '$key'";
-        last;
+        if( $vars->{$key}->[0] !~ /^[IDLC]$/ )
+        {
+            $self->{'error'} =
+                "Invalid type '" . $vars->{$key}->[0] . "' for '$key'";
+            last;
+        }
+        $self->{'vars'}->{$key}->[1] = 8 if $vars->{$key}->[0] eq 'D';
+        $self->{'vars'}->{$key}->[1] = 1 if $vars->{$key}->[0] eq 'L';
+        $self->{'record_size'} += $self->{'vars'}->{$key}->[1];
+        $self->{'header_size'} += 48;
     }
-    $self->{'vars'}->{$key}->[1] = 8 if $vars->{$key}->[0] eq 'D';
-    $self->{'vars'}->{$key}->[1] = 1 if $vars->{$key}->[0] eq 'L';
-    $self->{'record_size'} += $self->{'vars'}->{$key}->[1];
-    $self->{'header_size'} += 48;
-  }
 
-  return $self;
+    return $self;
+}
+
+# ------------------------------------------------------------------------------
+sub _e
+{
+    my ( $self, $error ) = @_;
+    $self->{'error'} = $error;
+    return $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
 sub add_record
 {
-  my ( $self, $data ) = @_;
+    my ( $self, $data ) = @_;
 
-  return $self->{'error'} if $self->{'error'};
+    return $self->{'error'} if $self->{'error'};
 
-  my %record;
-  foreach my $name ( keys %{$self->{'vars'}} )
-  {
-    my $value = $data->{$name} || '';
-    if( $value )
+    my %record;
+    foreach my $name ( keys %{ $self->{'vars'} } )
     {
-      my $length = length( $value ); 
-      if( $length > $self->{'vars'}->{$name}->[1] )
-      {
-        $self->{'error'} = "Too long value for field '$name': $length/".$self->{'vars'}->{$name}->[1];
-        return $self->{'error'};
-      }
+        my $value = $data->{$name} || '';
+        if( $value )
+        {
+            my $length = length( $value );
+            if( $length > $self->{'vars'}->{$name}->[1] )
+            {
+                return $self->_e( "Too long value for field '$name': $length/"
+                        . $self->{'vars'}->{$name}->[1] );
+            }
 
-      if( $self->{'vars'}->{$name}->[0] eq 'I' && $value !~ /^\d+$/ )
-      {
-        $self->{'error'} = "Invalid INTEGER value for '$name': '$value'";
-        return $self->{'error'};
-      }
+            if( $self->{'vars'}->{$name}->[0] eq 'I' && $value !~ /^\d+$/ )
+            {
+                return $self->_e(
+                    "Invalid INTEGER value for '$name': '$value'" );
+            }
 
-      if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
-      {
-        $self->{'error'} = "Invalid DATE value for '$name': '$value'";
-        return $self->{'error'};
-      }
+            if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
+            {
+                return $self->_e( "Invalid DATE value for '$name': '$value'" );
+            }
 
-      if( $self->{'vars'}->{$name}->[0] eq 'L' && $value !~ /^[TYNF \?]$/ )
-      {
-        $self->{'error'} = "Invalid LOGICAL value for '$name': '$value'";
-        return $self->{'error'};
-      }
+            if(    $self->{'vars'}->{$name}->[0] eq 'L'
+                && $value !~ /^[TYNF \?]$/ )
+            {
+                return $self->_e(
+                    "Invalid LOGICAL value for '$name': '$value'" );
+            }
+        }
+        $record{$name} = $value;
     }
-    $record{$name} = $value;
-  }
-  push @{$self->{'records'}}, \%record;
-  return undef;
+    push @{ $self->{'records'} }, \%record;
+    return undef;
 }
 
 # ------------------------------------------------------------------------------
 sub write_file
 {
-  my ( $self ) = @_;
+    my ( $self ) = @_;
 
-  return $self->{'error'} if $self->{'error'};
+    return $self->{'error'} if $self->{'error'};
 
-  confess 'No fields description given in '.__PACKAGE__.'::new()' 
-    if( !$self->{'vars'} || !keys %{$self->{'vars'}} );
+    return $self->_e(
+        'No fields description given in ' . __PACKAGE__ . '::new()' )
+        if( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
 
-  open my $dbf, '>:raw', $self->{file}
-    or confess 'Can not write "'.$self->{file}.'": '.$!;
-  binmode $dbf;
+    open my $dbf, '>:raw', $self->{file}
+        or return $self->_e( 'Can not write "' . $self->{file} . '": ' . $! );
+    binmode $dbf;
 
-  $self->write_header( $dbf, 1, 0 );
+    $self->write_header( $dbf, 1, 0 );
 
-  foreach my $key ( sort keys %{$self->{'vars'}} )
-  {
-    # field name (32 chars, zero-padded)
-    print $dbf pack( 'a32', $key );
-
-    # field type[1]
-    print $dbf pack( 'a', $self->{'vars'}->{$key}->[0] );
-
-    # field length
-    print $dbf pack( 'C', $self->{'vars'}->{$key}->[1] & 255 );
-
-    if( $self->{'vars'}->{$key}->[0] eq 'C' )
+    foreach my $key ( sort keys %{ $self->{'vars'} } )
     {
-    # char field, second byte of length
-      print $dbf pack( 'C', ($self->{'vars'}->{$key}->[1] << 8) & 255 );
+        # field name (32 chars, zero-padded)
+        print $dbf pack( 'a32', $key );
+
+        # field type[1]
+        print $dbf pack( 'a', $self->{'vars'}->{$key}->[0] );
+
+        # field length
+        print $dbf pack( 'C', $self->{'vars'}->{$key}->[1] & 255 );
+
+        if( $self->{'vars'}->{$key}->[0] eq 'C' )
+        {
+            # char field, second byte of length
+            print $dbf pack( 'C', ( $self->{'vars'}->{$key}->[1] << 8 ) & 255 );
+        }
+        else
+        {
+            # non-char field, decimal
+            print $dbf pack( 'C', 0 );
+        }
+
+        # reserved[2]
+        print $dbf pack( 'CC', 0, 0 );
+
+        # mdx
+        print $dbf pack( 'C', 0 );
+
+        # reserved[2]
+        print $dbf pack( 'CC', 0, 0 );
+
+        # autoincrement, int32
+        print $dbf pack( 'L', 0, );
+
+        # reserved[4]
+        print $dbf pack( 'L', 0 );
     }
-    else
+    print $dbf pack( 'C', 13 );
+
+    foreach my $record ( @{ $self->{'records'} } )
     {
-    # non-char field, decimal
-      print $dbf pack( 'C', 0 );
+        # 32 - regular record, 42 - deleted record
+        print $dbf pack( 'C', 32 );
+        foreach my $key ( sort keys %{$record} )
+        {
+            if( $self->{'vars'}->{$key}->[0] eq 'I' )
+            {
+                print $dbf pack( 'l', ( $record->{$key} || 0 ) );
+            }
+            else
+            {
+                print $dbf
+                    pack( 'A' . ( $self->{'vars'}->{$key}->[1] ),
+                    $record->{$key} );
+            }
+        }
     }
 
-    # reserved[2]
-    print $dbf pack( 'CC', 0, 0 );
-
-    # mdx
-    print $dbf pack( 'C', 0 );
-
-    # reserved[2]
-    print $dbf pack( 'CC', 0, 0 );
-
-    # autoincrement, int32
-    print $dbf pack( 'L', 0,  );
-
-    # reserved[4]
-    print $dbf pack( 'L', 0 );
-  }
-  print $dbf pack( 'C', 13 );
-
-  foreach my $record ( @{$self->{'records' }} )
-  {
-    # 32 - regular record, 42 - deleted record
-    print $dbf pack( 'C', 32 );
-    foreach my $key ( sort keys %{$record} )
-    {
-      if( $self->{'vars'}->{$key}->[0] eq 'I' )
-      {
-        print $dbf pack( 'l', ($record->{$key} || 0) );
-      }
-      else
-      {
-        print $dbf pack( 'A'.($self->{'vars'}->{$key}->[1]), $record->{$key} );
-      }
-    }
-  }
-
-  print $dbf pack( 'C', 0x1A );
-  close $dbf;
-  $self->close_file();
+    print $dbf pack( 'C', 0x1A );
+    close $dbf;
+    $self->close_file();
 }
 
 # ------------------------------------------------------------------------------
 sub write_header
 {
-  my ( $self, $dbf ) = @_;
+    my ( $self, $dbf ) = @_;
 
-  return $self->{'error'} if $self->{'error'};
+    return $self->{'error'} if $self->{'error'};
 
-  # signature
-  print $dbf pack( 'C', 4 );
+    # signature
+    print $dbf pack( 'C', 4 );
 
-  my ( undef,undef,undef,$mday,$mon,$year ) = gmtime( time );
-  $mon++;
-  # created
-  print $dbf pack( 'CCC', $year, $mon, $mday );
+    my ( undef, undef, undef, $mday, $mon, $year ) = gmtime( time );
+    $mon++;
 
-  # records number as 32-bit unsigned
-  print $dbf pack ( 'L', scalar @{$self->{'records'}} );
+    # created
+    print $dbf pack( 'CCC', $year, $mon, $mday );
 
-  # header size as 16-bit unsigned
-  print $dbf pack ( 'S', $self->{'header_size'} );
+    # records number as 32-bit unsigned
+    print $dbf pack( 'L', scalar @{ $self->{'records'} } );
 
-  # record size as 16-bit unsigned
-  print $dbf pack ( 'S', $self->{'record_size'} );
-  
-  # reserved r1[2], db4r1, db4r2
-  print $dbf pack ( 'L', 0 );
+    # header size as 16-bit unsigned
+    print $dbf pack( 'S', $self->{'header_size'} );
 
-  # multiuser[12]
-  print $dbf pack ( 'C' x 12, 0 x 12 );
+    # record size as 16-bit unsigned
+    print $dbf pack( 'S', $self->{'record_size'} );
 
-  # mdx
-  print $dbf pack ( 'C', 0 );
+    # reserved r1[2], db4r1, db4r2
+    print $dbf pack( 'L', 0 );
 
-  # code page
-  print $dbf pack ( 'C', $self->{'codepage'} );
+    # multiuser[12]
+    print $dbf pack( 'C' x 12, 0 x 12 );
 
-  # reserved[2]
-  print $dbf pack ( 'CC', 0, 0 );
+    # mdx
+    print $dbf pack( 'C', 0 );
 
-  # language driver
-  print $dbf pack ( 'a32', $self->{'language'} );
+    # code page
+    print $dbf pack( 'C', $self->{'codepage'} );
 
-  # reserved[4]
-  print $dbf pack ( 'L', 0 );
+    # reserved[2]
+    print $dbf pack( 'CC', 0, 0 );
+
+    # language driver
+    print $dbf pack( 'a32', $self->{'language'} );
+
+    # reserved[4]
+    print $dbf pack( 'L', 0 );
 }
 
 # ------------------------------------------------------------------------------
 sub close_file
 {
-  my ( $self ) = @_;
-  undef $self->{'file'};
-  undef $self->{'vars'};
-  undef $self->{'record_size'};
-  undef $self->{'header_size'};
-  undef $self->{'records'};
-  undef $self->{'error'};
+    my ( $self ) = @_;
+    undef $self->{'file'};
+    undef $self->{'vars'};
+    undef $self->{'record_size'};
+    undef $self->{'header_size'};
+    undef $self->{'records'};
+    undef $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
