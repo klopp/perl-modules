@@ -114,8 +114,8 @@ sub write_file
         'No fields description given in ' . __PACKAGE__ . '::new()' )
         if( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
 
-    open my $dbf, '>:raw', $self->{file}
-        or return $self->_e( 'Can not write "' . $self->{file} . '": ' . $! );
+    open my $dbf, '>:raw', $self->{'file'}
+        or return $self->_e( 'Can not write "' . $self->{'file'} . '": ' . $! );
     binmode $dbf;
 
     $self->_write_header( $dbf, 1, 0 );
