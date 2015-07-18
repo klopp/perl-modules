@@ -12,7 +12,7 @@ sub new
 {
     my ( $class, $opt, $vars ) = @_;
 
-    my $self = bless $opt;
+    my $self = bless $opt, $class;
 
     $self->{'vars'}        = $vars;
     $self->{'record_size'} = 0;
@@ -74,7 +74,7 @@ sub _validate_value
     }
     else
     {
-        my $length = length( $value );
+        my $length = length $value;
         if( $length > $self->{'vars'}->{$name}->[1] )
         {
             return $self->_e( "Too long value for field '$name': $length/"
@@ -165,7 +165,7 @@ sub write_file
         print $dbf pack( 'CC', 0, 0 );
 
         # autoincrement, int32
-        print $dbf pack( 'L', 0, );
+        print $dbf pack( 'L', 0 );
 
         # reserved[4]
         print $dbf pack( 'L', 0 );
