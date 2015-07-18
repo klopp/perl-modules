@@ -321,7 +321,7 @@ B<language> - language driver ID, default is 'DBWINUS0' (ANSI)
 
 B<nocheck> - skip values validation if is set
 
-=item add_field( I<$record> )
+=item add_record( I<$record> )
 
 Record is hash ref (name => value). Unknown keys are ignored.
 
