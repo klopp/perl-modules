@@ -305,9 +305,9 @@ B<codepage> - code page ID, default is 0x01 (CP 437)
 
 B<language> - language driver ID, default is 'DBWINUS0' (ANSI)
 
-=item add_field( I<$field> )
+=item add_field( I<$record> )
 
-Field is hash ref. Unknown keys are ignored.
+Record is hash ref (name => value). Unknown keys are ignored.
 
 =item write_file()
 
