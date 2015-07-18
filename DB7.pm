@@ -303,7 +303,7 @@ B<file> - filename to write, required
 
 B<codepage> - code page ID, default is 0x01 (CP 437)
 
-B<language> - language driver ID, default is 'DBWINUS0' (US-ASCII)
+B<language> - language driver ID, default is 'DBWINUS0' (ANSI)
 
 =item add_field( I<$field> )
 
