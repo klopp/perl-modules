@@ -26,8 +26,8 @@ sub new
     foreach my $key ( keys %{$vars} )
     {
         my $length = length $key;
-        $self->{'error'} = "Invalid name length for '$key' ($length chars, 32 max)",
-            last
+        $self->{'error'} =
+            "Invalid name length for '$key' ($length chars, 32 max)", last
             if $length > 32;
 
         $self->{'error'} =
@@ -71,14 +71,24 @@ sub add_record
         my $value = $data->{$name};
         if( $value )
         {
-            my $length = length( $value );
-            # FIXME: Valid checking for integer types?
-            if( $length > $self->{'vars'}->{$name}->[1] )
+            if( $self->{'vars'}->{$name}->[0] eq 'I' )
             {
-                return $self->_e( "Too long value for field '$name': $length/"
-                        . $self->{'vars'}->{$name}->[1] );
+                if( $value < -2147483648 || $value > 2147483647 )
+                {
+                    return $self->_e(
+                        "Invalid INTEGER value of '$name': $value" );
+                }
             }
-
+            else
+            {
+                my $length = length( $value );
+                if( $length > $self->{'vars'}->{$name}->[1] )
+                {
+                    return $self->_e(
+                        "Too long value for field '$name': $length/"
+                            . $self->{'vars'}->{$name}->[1] );
+                }
+            }
             if( $self->{'vars'}->{$name}->[0] eq 'I' && $value !~ /^\d+$/ )
             {
                 return $self->_e(
