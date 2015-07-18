@@ -2,10 +2,23 @@
 package DB7;
 use strict;
 use warnings;
+use Readonly;
+use English qw /-no_match_vars/;
 
 # ------------------------------------------------------------------------------
 use vars qw /$VERSION/;
 $VERSION = '1.0';
+
+# ------------------------------------------------------------------------------
+Readonly::Scalar my $DB7_HEADER_END   => 0x0D;
+Readonly::Scalar my $DB7_FILE_END     => 0x1A;
+Readonly::Scalar my $DB7_CHAR_MAX     => 255;
+Readonly::Scalar my $DB7_CHAR_BITS    => 8;
+Readonly::Scalar my $DB7_INT_MAX      => 2_147_483_647;
+Readonly::Scalar my $DB7_INT_MIN      => -2_147_483_648;
+Readonly::Scalar my $DB7_RECNAME_MAX  => 32;
+Readonly::Scalar my $DB7_DEF_CODEPAGE => 0x01;
+Readonly::Scalar my $DB7_DEF_LANGUAGE => 'DBWINUS0';
 
 # ------------------------------------------------------------------------------
 sub new
@@ -20,15 +33,15 @@ sub new
     $self->{'records'}     = [];
     $self->{'error'}       = undef;
 
-    $self->{'codepage'} ||= 0x01;
-    $self->{'language'} ||= 'DBWINUS0';
+    $self->{'codepage'} ||= $DB7_DEF_CODEPAGE;
+    $self->{'language'} ||= $DB7_DEF_LANGUAGE;
 
     foreach my $key ( keys %{$vars} )
     {
         my $length = length $key;
         $self->{'error'} =
             "Invalid name length for '$key' ($length chars, 32 max)", last
-            if $length > 32;
+            if $length > $DB7_RECNAME_MAX;
 
         $self->{'error'} =
             "Invalid type '" . $vars->{$key}->[0] . "' for '$key'", last
@@ -66,8 +79,8 @@ sub _validate_value
     if( $self->{'vars'}->{$name}->[0] eq 'I' )
     {
         if(    $value !~ /^[\-\+]?\d+$/
-            || $value < -2147483648
-            || $value > 2147483647 )
+            || $value < $DB7_INT_MIN
+            || $value > $DB7_INT_MAX )
         {
             return $self->_e( "Invalid INTEGER value of '$name': $value" );
         }
@@ -101,7 +114,7 @@ sub add_record
 
     return $self->{'error'} if $self->{'error'};
 
-    my %record;
+    my %rec;
     foreach my $name ( keys %{ $self->{'vars'} } )
     {
         my $value = $data->{$name};
@@ -110,9 +123,9 @@ sub add_record
             $self->_validate_value( $name, $value ) unless $self->{'nocheck'};
             return $self->{'error'} if $self->{'error'};
         }
-        $record{$name} = $value || '';
+        $rec{$name} = $value || '';
     }
-    push @{ $self->{'records'} }, \%record;
+    push @{ $self->{'records'} }, \%rec;
     return;
 }
 
@@ -128,7 +141,8 @@ sub write_file
         if( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
 
     open my $dbf, '>:raw', $self->{'file'}
-        or return $self->_e( 'Can not write "' . $self->{'file'} . '": ' . $! );
+        or return $self->_e(
+        'Can not write "' . $self->{'file'} . '": ' . $ERRNO );
     binmode $dbf;
 
     return $self->{'error'} if $self->_write_header( $dbf );
@@ -142,12 +156,15 @@ sub write_file
         print $dbf pack( 'a', $self->{'vars'}->{$key}->[0] );
 
         # field length
-        print $dbf pack( 'C', $self->{'vars'}->{$key}->[1] & 255 );
+        print $dbf pack( 'C', $self->{'vars'}->{$key}->[1] & $DB7_CHAR_MAX );
 
         if( $self->{'vars'}->{$key}->[0] eq 'C' )
         {
             # char field, second byte of length
-            print $dbf pack( 'C', ( $self->{'vars'}->{$key}->[1] << 8 ) & 255 );
+            print $dbf pack(
+                'C',
+                ( $self->{'vars'}->{$key}->[1] << $DB7_CHAR_BITS )
+                    & $DB7_CHAR_MAX );
         }
         else
         {
@@ -170,7 +187,7 @@ sub write_file
         # reserved[4]
         print $dbf pack( 'L', 0 );
     }
-    print $dbf pack( 'C', 13 );
+    print $dbf pack( 'C', $DB7_HEADER_END );
 
     foreach my $record ( @{ $self->{'records'} } )
     {
@@ -191,9 +208,9 @@ sub write_file
         }
     }
 
-    print $dbf pack( 'C', 0x1A );
+    print $dbf pack( 'C', $DB7_FILE_END );
     close $dbf;
-    
+
     return $self->{'error'};
 }
 
@@ -242,7 +259,7 @@ sub _write_header
 
     # reserved[4]
     print $dbf pack( 'L', 0 );
-    
+
     return $self->{'error'};
 }
 
