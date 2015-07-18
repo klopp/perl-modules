@@ -210,7 +210,7 @@ sub _write_header
     $mon++;
 
     # created
-    print $dbf pack( 'CCC', $year, $mon, $mday );
+    print $dbf pack( 'C3', $year, $mon, $mday );
 
     # records number as 32-bit unsigned
     print $dbf pack( 'L', scalar @{ $self->{'records'} } );
