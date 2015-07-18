@@ -59,6 +59,42 @@ sub _e
 }
 
 # ------------------------------------------------------------------------------
+sub _validate_value
+{
+    my ( $self, $name, $value ) = @_;
+
+    if( $self->{'vars'}->{$name}->[0] eq 'I' )
+    {
+        if(    $value !~ /^[\-\+]?\d+$/
+            || $value < -2147483648
+            || $value > 2147483647 )
+        {
+            return $self->_e( "Invalid INTEGER value of '$name': $value" );
+        }
+    }
+    else
+    {
+        my $length = length( $value );
+        if( $length > $self->{'vars'}->{$name}->[1] )
+        {
+            return $self->_e( "Too long value for field '$name': $length/"
+                    . $self->{'vars'}->{$name}->[1] );
+        }
+    }
+
+    if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
+    {
+        return $self->_e( "Invalid DATE value for '$name': '$value'" );
+    }
+
+    if(    $self->{'vars'}->{$name}->[0] eq 'L'
+        && $value !~ /^[TYNF \?]$/i )
+    {
+        return $self->_e( "Invalid LOGICAL value for '$name': '$value'" );
+    }
+}
+
+# ------------------------------------------------------------------------------
 sub add_record
 {
     my ( $self, $data ) = @_;
@@ -71,41 +107,8 @@ sub add_record
         my $value = $data->{$name};
         if( $value )
         {
-            if( $self->{'vars'}->{$name}->[0] eq 'I' )
-            {
-                if( $value < -2147483648 || $value > 2147483647 )
-                {
-                    return $self->_e(
-                        "Invalid INTEGER value of '$name': $value" );
-                }
-            }
-            else
-            {
-                my $length = length( $value );
-                if( $length > $self->{'vars'}->{$name}->[1] )
-                {
-                    return $self->_e(
-                        "Too long value for field '$name': $length/"
-                            . $self->{'vars'}->{$name}->[1] );
-                }
-            }
-            if( $self->{'vars'}->{$name}->[0] eq 'I' && $value !~ /^\d+$/ )
-            {
-                return $self->_e(
-                    "Invalid INTEGER value for '$name': '$value'" );
-            }
-
-            if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
-            {
-                return $self->_e( "Invalid DATE value for '$name': '$value'" );
-            }
-
-            if(    $self->{'vars'}->{$name}->[0] eq 'L'
-                && $value !~ /^[TYNF \?]$/i )
-            {
-                return $self->_e(
-                    "Invalid LOGICAL value for '$name': '$value'" );
-            }
+            $self->_validate_value( $name, $value ) unless $self->{'nocheck'};
+            return $self->{'error'} if $self->{'error'};
         }
         $record{$name} = $value || '';
     }
@@ -265,7 +268,8 @@ __END__
     {
       file => 'filename.dbf',
       codepage => 3,
-      language => 'db866ru0'
+      language => 'db866ru0',
+      nocheck => 1
     },
     {
       INT_FLD  => [ 'I', 4 ],   # integer field, length = 4
@@ -314,6 +318,8 @@ B<file> - filename to write, required
 B<codepage> - code page ID, default is 0x01 (CP 437)
 
 B<language> - language driver ID, default is 'DBWINUS0' (ANSI)
+
+B<nocheck> - skip values validation if is set
 
 =item add_field( I<$record> )
 
