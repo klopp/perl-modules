@@ -113,7 +113,7 @@ sub add_record
         $record{$name} = $value || '';
     }
     push @{ $self->{'records'} }, \%record;
-    return undef;
+    return;
 }
 
 # ------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ sub write_file
         or return $self->_e( 'Can not write "' . $self->{'file'} . '": ' . $! );
     binmode $dbf;
 
-    $self->_write_header( $dbf );
+    return $self->{'error'} if $self->_write_header( $dbf );
 
     foreach my $key ( sort keys %{ $self->{'vars'} } )
     {
@@ -193,7 +193,8 @@ sub write_file
 
     print $dbf pack( 'C', 0x1A );
     close $dbf;
-    $self->close_file();
+    
+    return $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
@@ -241,18 +242,8 @@ sub _write_header
 
     # reserved[4]
     print $dbf pack( 'L', 0 );
-}
-
-# ------------------------------------------------------------------------------
-sub close_file
-{
-    my ( $self ) = @_;
-    undef $self->{'file'};
-    undef $self->{'vars'};
-    undef $self->{'record_size'};
-    undef $self->{'header_size'};
-    undef $self->{'records'};
-    undef $self->{'error'};
+    
+    return $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
