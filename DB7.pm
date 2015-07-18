@@ -118,7 +118,7 @@ sub write_file
         or return $self->_e( 'Can not write "' . $self->{'file'} . '": ' . $! );
     binmode $dbf;
 
-    $self->_write_header( $dbf, 1, 0 );
+    $self->_write_header( $dbf );
 
     foreach my $key ( sort keys %{ $self->{'vars'} } )
     {
