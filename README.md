@@ -9,4 +9,4 @@
 
 ##DB7.pm
 
-- Create abd write dBase 7 files. MDX (indexes) and MEMO-files are not supported.
+- Create and write dBase 7 files. MDX (indexes) and MEMO-files are not supported.
