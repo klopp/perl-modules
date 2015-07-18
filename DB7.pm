@@ -25,12 +25,15 @@ sub new
 
     foreach my $key ( keys %{$vars} )
     {
-        if( $vars->{$key}->[0] !~ /^[IDLC]$/ )
-        {
-            $self->{'error'} =
-                "Invalid type '" . $vars->{$key}->[0] . "' for '$key'";
-            last;
-        }
+        my $length = length $key;
+        $self->{'error'} = "Invalid name length for '$key' ($length chars)",
+            last
+            if $length > 32;
+
+        $self->{'error'} =
+            "Invalid type '" . $vars->{$key}->[0] . "' for '$key'", last
+            if $vars->{$key}->[0] !~ /^[IDLC]$/;
+
         $self->{'vars'}->{$key}->[1] = 8 if $vars->{$key}->[0] eq 'D';
         $self->{'vars'}->{$key}->[1] = 1 if $vars->{$key}->[0] eq 'L';
         $self->{'record_size'} += $self->{'vars'}->{$key}->[1];
@@ -87,7 +90,7 @@ sub add_record
             }
 
             if(    $self->{'vars'}->{$name}->[0] eq 'L'
-                && $value !~ /^[TYNF \?]$/ )
+                && $value !~ /^[TYNF \?]$/i )
             {
                 return $self->_e(
                     "Invalid LOGICAL value for '$name': '$value'" );
@@ -167,8 +170,8 @@ sub write_file
             }
             else
             {
-                print $dbf
-                    pack( 'A' . ( $self->{'vars'}->{$key}->[1] ),
+                print $dbf pack(
+                    'A' . ( $self->{'vars'}->{$key}->[1] ),
                     $record->{$key} );
             }
         }
