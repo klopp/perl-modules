@@ -26,7 +26,7 @@ sub new
     foreach my $key ( keys %{$vars} )
     {
         my $length = length $key;
-        $self->{'error'} = "Invalid name length for '$key' ($length chars)",
+        $self->{'error'} = "Invalid name length for '$key' ($length chars, 32 max)",
             last
             if $length > 32;
 
