@@ -72,6 +72,7 @@ sub add_record
         if( $value )
         {
             my $length = length( $value );
+            # FIXME: Valid checking for integer types?
             if( $length > $self->{'vars'}->{$name}->[1] )
             {
                 return $self->_e( "Too long value for field '$name': $length/"
