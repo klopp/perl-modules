@@ -269,7 +269,14 @@ __END__
 
 =head1 DESCRIPTION
 
-This module can write dBase 7 files. MDX (indexes) and MEMO-files are not supported.
+This module can write dBase 7 files. MDX (indexes) and MEMO-files are not supported. 
+
+Known field types: 
+
+B<D> date 
+B<I> integer 
+B<L> logical 
+B<C> character 
 
 =head1 METHODS
 
@@ -284,6 +291,12 @@ B<file> - filename to write, required.
 B<codepage> - code page ID, default is 0x01 (CP 437)
 
 B<language> - language driver ID, default is 'DBWINUS0' (US-ASCII)
+
+=item add_field( I<$field> )
+
+Field is hash ref. Unknown keys are ignored.
+
+=item write_file()
 
 =back
 
