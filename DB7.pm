@@ -264,7 +264,7 @@ __END__
       CHAR_FLD => [ 'C', 128 ], # char field, length = 128
     }
   );
-  die $db7->{'error'} if $db7->{'error'};
+  die $db7->errstr if $db7->errstr;
 
   $db7->add_record
   (
@@ -275,10 +275,10 @@ __END__
       CHAR_FLD => 'Some string'
     }
   );
-  die $db7->{'error'} if $db7->{'error'};
+  die $db7->errstr if $db7->errstr;
 
   $db7->write_file();
-  die $db7->{'error'} if $db7->{'error'};
+  die $db7->errstr if $db7->errstr;
 
 =head1 DESCRIPTION
 
@@ -310,6 +310,8 @@ B<language> - language driver ID, default is 'DBWINUS0' (US-ASCII)
 Field is hash ref. Unknown keys are ignored.
 
 =item write_file()
+
+=item errstr()
 
 =back
 
