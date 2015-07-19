@@ -92,7 +92,7 @@ B<-foo bar> : $argv{'foo'} => 'bar'
 
 =item argv( I<$arrayref> )
 
-Parse given arrayref, or @ARGV if arrayref is empty. Return hash or hashref.
+Parse given arrayref, or @ARGV if I<$arrayref> is empty. Return hash or hashref.
 
 =back
 
