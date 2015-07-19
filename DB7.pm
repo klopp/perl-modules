@@ -133,7 +133,7 @@ sub write_file
 
     open my $dbf, '>:raw', $self->{'file'}
         or
-        return $self->_e( 'Can not OPEN "' . $self->{'file'} . '": ' . $ERRNO );
+        return $self->_e( "Can not OPEN \"$self->{'file'}\": $ERRNO" );
     binmode $dbf;
 
     return $self->{'error'} if $self->_write_header( $dbf );
@@ -174,7 +174,7 @@ sub write_file
     print {$dbf} pack( 'C', $DB7_FILE_END );
     close $dbf
         or return $self->_e(
-        'Can not CLOSE "' . $self->{'file'} . '": ' . $ERRNO );
+        "Can not CLOSE \"$self->{'file'}\": $ERRNO" );
 
     return $self->{'error'};
 }
