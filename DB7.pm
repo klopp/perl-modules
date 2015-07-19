@@ -1,4 +1,3 @@
-# ------------------------------------------------------------------------------
 package DB7;
 use strict;
 use warnings;
@@ -338,7 +337,7 @@ B<DB7::new()> call also.
 
 =head1 BUGS AND LIMITATIONS
 
-Known bug: incorrect negative INTEGER handling.
+Known bug: incorrect negative INTEGER handling (map to unsigned).
 
 Works only with field types: 
 
