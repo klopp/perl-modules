@@ -10,6 +10,7 @@ use vars qw /$VERSION/;
 $VERSION = '1.0';
 
 # ------------------------------------------------------------------------------
+const my $DB7_SIGNATURE    => 0x04;
 const my $DB7_HEADER_END   => 0x0D;
 const my $DB7_FILE_END     => 0x1A;
 const my $DB7_CHAR_MAX     => 255;
@@ -19,6 +20,18 @@ const my $DB7_INT_MIN      => -2_147_483_648;
 const my $DB7_RECNAME_MAX  => 32;
 const my $DB7_DEF_CODEPAGE => 0x01;
 const my $DB7_DEF_LANGUAGE => 'DBWINUS0';
+const my $DB7_HEADER       => '
+C       //  signature
+C3      //  created, YMD
+L       //  records number, as 32-bit unsigned
+S       //  header size, as 16-bit unsigned
+S       //  record size, as 16-bit unsigned
+a17     //  reserved[2], dBase IV[2], multiuser[12], MDX[1],
+C       //  dBase IV, Visual FoxPro, XBase codepage[1]
+S       //  reserved[2]
+a32     //  language driver
+L       //  reserved[4]
+';
 
 # ------------------------------------------------------------------------------
 sub new
@@ -33,7 +46,6 @@ sub new
     $self->{'records'}     = [];
     $self->{'error'}       = undef;
 
-    $self->{'codepage'} ||= $DB7_DEF_CODEPAGE;
     $self->{'language'} ||= $DB7_DEF_LANGUAGE;
 
     foreach my $key ( keys %{$vars} )
@@ -221,44 +233,24 @@ sub _write_header
 
     return $self->{'error'} if $self->{'error'};
 
-    # signature
-    print $dbf pack( 'C', 4 );
+    my $header = $DB7_HEADER;
+    $header =~ s[\s+//.+$][]gm;
+    $header =~ s[\s+][]g;
 
     my ( undef, undef, undef, $mday, $mon, $year ) = gmtime( time );
-    $mon++;
 
-    # created
-    print $dbf pack( 'C3', $year, $mon, $mday );
-
-    # records number as 32-bit unsigned
-    print $dbf pack( 'L', scalar @{ $self->{'records'} } );
-
-    # header size as 16-bit unsigned
-    print $dbf pack( 'S', $self->{'header_size'} );
-
-    # record size as 16-bit unsigned
-    print $dbf pack( 'S', $self->{'record_size'} );
-
-    # reserved r1[2], db4r1, db4r2
-    print $dbf pack( 'L', 0 );
-
-    # multiuser[12]
-    print $dbf pack( 'C' x 12, 0 x 12 );
-
-    # mdx
-    print $dbf pack( 'C', 0 );
-
-    # code page
-    print $dbf pack( 'C', $self->{'codepage'} );
-
-    # reserved[2]
-    print $dbf pack( 'CC', 0, 0 );
-
-    # language driver
-    print $dbf pack( 'a32', $self->{'language'} );
-
-    # reserved[4]
-    print $dbf pack( 'L', 0 );
+    print $dbf pack(
+        $header,
+        $DB7_SIGNATURE,
+        $year, $mon + 1, $mday,
+        scalar @{ $self->{'records'} },
+        $self->{'header_size'},
+        $self->{'record_size'},
+        '',
+        $DB7_DEF_CODEPAGE,
+        0,
+        $self->{'language'},
+        0 );
 
     return $self->{'error'};
 }
@@ -275,7 +267,6 @@ __END__
   (
     {
       file => 'filename.dbf',
-      codepage => 3,
       language => 'db866ru0',
       nocheck => 1
     },
@@ -322,8 +313,6 @@ B<C> character
 Options is hash ref, valid fields are:
 
 B<file> - filename to write, required
-
-B<codepage> - code page ID, default is 0x01 (CP 437)
 
 B<language> - language driver ID, default is 'DBWINUS0' (ANSI)
 
