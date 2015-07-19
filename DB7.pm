@@ -174,8 +174,8 @@ sub write_file
         if( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
 
     open my $dbf, '>:raw', $self->{'file'}
-        or return $self->_e(
-        'Can not write "' . $self->{'file'} . '": ' . $ERRNO );
+        or
+        return $self->_e( 'Can not OPEN "' . $self->{'file'} . '": ' . $ERRNO );
     binmode $dbf;
 
     return $self->{'error'} if $self->_write_header( $dbf );
@@ -214,7 +214,9 @@ sub write_file
     }
 
     print {$dbf} pack( 'C', $DB7_FILE_END );
-    close $dbf;
+    close $dbf
+        or return $self->_e(
+        'Can not CLOSE "' . $self->{'file'} . '": ' . $ERRNO );
 
     return $self->{'error'};
 }
