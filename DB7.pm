@@ -295,7 +295,7 @@ Version 1.1
 
 =head1 DESCRIPTION
 
-This module can write dBase 7 files. MDX (indexes) and MEMO are not supported. 
+This module can write dBase 7 files. 
 
 =head1 SUBROUTINES/METHODS
 
@@ -333,23 +333,31 @@ B<DB7::new()> call also.
 
 =head1 BUGS AND LIMITATIONS
 
-Incorrect negative INTEGER handling.
+Known bug: incorrect negative INTEGER handling.
 
-Works with field types: 
+Works only with field types: 
 
 B<D> date 
 B<I> integer 
 B<L> logical 
 B<C> character 
 
+MDX (indexes) and MEMO are not supported.
 
 =head1 LICENSE AND COPYRIGHT
 
-All rights reserved. This package is free software; you can
-redistribute it and/or modify it under the same terms as Perl itself.
+Coyright (C) 2015 Vsevolod Lutovinov.
 
+This program is free software; you can redistribute it and/or modify it under 
+the same terms as Perl itself. The full text of this license can be found in 
+the LICENSE file included with this module.
 
 =head1 AUTHOR
 
-(c) 2015 Vsevolod Lutovinov
 Contact the author at klopp@yandex.ru.
+
+=head1 SOURCE CODE
+
+Source code and issues can be found here:
+ <https://github.com/klopp/perl-modules>
+ 
