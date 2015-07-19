@@ -18,9 +18,13 @@ const my $DB7_CHAR_BITS    => 8;
 const my $DB7_INT_MAX      => 2_147_483_647;
 const my $DB7_INT_MIN      => -2_147_483_648;
 const my $DB7_RECNAME_MAX  => 32;
+const my $DB7_RECORD_SIGN  => 32;               # 32 - regular, 42 - deleted
+const my $DB7_DATE_SIZE    => 8;
+const my $DB7_BOOL_SIZE    => 1;
 const my $DB7_DEF_CODEPAGE => 0x01;
 const my $DB7_DEF_LANGUAGE => 'DBWINUS0';
-const my $DB7_HEADER       => <<'EOL';
+
+const my $DB7_HEADER => <<'EOL';
 C       //  signature
 C3      //  created, YMD
 L       //  records number, as 32-bit unsigned
@@ -32,7 +36,11 @@ S       //  reserved[2]
 a32     //  language driver
 L       //  reserved[4]
 EOL
-const my $DB7_HEADER_SIZE => length( pack $DB7_HEADER, 0 );
+my $DB7_HEADER_TPL = $DB7_HEADER;
+$DB7_HEADER_TPL =~ s{\s+//.+$}{}gm;
+$DB7_HEADER_TPL =~ s{\s+}{}g;
+const my $DB7_HEADER_SIZE => length( pack $DB7_HEADER_TPL, 0 );
+
 const my $DB7_FIELD_DESCR => <<'EOL';
 a32     //  field name
 a       //  field type[1]
@@ -40,10 +48,10 @@ C       //  field length, 1st byte
 C       //  2nd byte of length (type=C) or 0
 a13     //  reserved[2], MDX, reserved[2], autoincrement[int32], reserved[4]
 EOL
-const my $DB7_FDECSR_SIZE => length( pack $DB7_FIELD_DESCR, 0 );
-const my $DB7_RECORD_SIGN => 32;    # 32 - regular, 42 - deleted
-const my $DB7_DATE_SIZE   => 8;
-const my $DB7_BOOL_SIZE   => 1;
+my $DB7_FDESCR_TPL = $DB7_FIELD_DESCR;
+$DB7_FDESCR_TPL =~ s{\s+//.+$}{}gm;
+$DB7_FDESCR_TPL =~ s{\s+}{}g;
+const my $DB7_FDECSR_SIZE => length( pack $DB7_FDESCR_TPL, 0 );
 
 # ------------------------------------------------------------------------------
 sub new
@@ -67,8 +75,7 @@ sub new
             "Invalid name length for '$key' ($length chars, 32 max)", last
             if $length > $DB7_RECNAME_MAX;
 
-        $self->{'error'} =
-            "Invalid type '" . $vars->{$key}->[0] . "' for '$key'", last
+        $self->{'error'} = "Invalid type '$vars->{$key}->[0]' for '$key'", last
             if $vars->{$key}->[0] !~ /^[IDLC]$/;
 
         $self->{'vars'}->{$key}->[1] = $DB7_DATE_SIZE
@@ -104,7 +111,7 @@ sub _validate_value
 
     if( $self->{'vars'}->{$name}->[0] eq 'I' )
     {
-        if(    $value !~ /^[\-\+]?\d+$/
+        if(    $value !~ /^[-+]?\d+$/
             || $value < $DB7_INT_MIN
             || $value > $DB7_INT_MAX )
         {
@@ -127,7 +134,7 @@ sub _validate_value
     }
 
     if(    $self->{'vars'}->{$name}->[0] eq 'L'
-        && $value !~ /^[TYNF \?]$/i )
+        && $value !~ /^[TYNF ?]$/i )
     {
         return $self->_e( "Invalid LOGICAL value for '$name': '$value'" );
     }
@@ -173,14 +180,10 @@ sub write_file
 
     return $self->{'error'} if $self->_write_header( $dbf );
 
-    my $field_descr = $DB7_FIELD_DESCR;
-    $field_descr =~ s[\s+//.+$][]gm;
-    $field_descr =~ s[\s+][]g;
-
     foreach my $key ( sort keys %{ $self->{'vars'} } )
     {
-        print $dbf pack(
-            $field_descr,
+        print {$dbf} pack(
+            $DB7_FDESCR_TPL,
             $key,
             $self->{'vars'}->{$key}->[0],
             ( $self->{'vars'}->{$key}->[1] & $DB7_CHAR_MAX ),
@@ -190,27 +193,27 @@ sub write_file
                 : 0 ),
             '' );
     }
-    print $dbf pack( 'C', $DB7_HEADER_END );
+    print {$dbf} pack( 'C', $DB7_HEADER_END );
 
     foreach my $record ( @{ $self->{'records'} } )
     {
-        print $dbf pack( 'C', $DB7_RECORD_SIGN );
+        print {$dbf} pack( 'C', $DB7_RECORD_SIGN );
         foreach my $key ( sort keys %{$record} )
         {
             if( $self->{'vars'}->{$key}->[0] eq 'I' )
             {
-                print $dbf pack( 'N', ( $record->{$key} || 0 ) );
+                print {$dbf} pack( 'N', ( $record->{$key} || 0 ) );
             }
             else
             {
-                print $dbf pack(
+                print {$dbf} pack(
                     'A' . ( $self->{'vars'}->{$key}->[1] ),
                     $record->{$key} );
             }
         }
     }
 
-    print $dbf pack( 'C', $DB7_FILE_END );
+    print {$dbf} pack( 'C', $DB7_FILE_END );
     close $dbf;
 
     return $self->{'error'};
@@ -223,14 +226,10 @@ sub _write_header
 
     return $self->{'error'} if $self->{'error'};
 
-    my $header = $DB7_HEADER;
-    $header =~ s[\s+//.+$][]gm;
-    $header =~ s[\s+][]g;
-
     my ( undef, undef, undef, $mday, $mon, $year ) = gmtime( time );
 
-    print $dbf pack(
-        $header,
+    print {$dbf} pack(
+        $DB7_HEADER_TPL,
         $DB7_SIGNATURE,
         $year, $mon + 1, $mday,
         scalar @{ $self->{'records'} },
