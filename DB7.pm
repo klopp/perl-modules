@@ -7,7 +7,7 @@ use English qw /-no_match_vars/;
 
 # ------------------------------------------------------------------------------
 use vars qw /$VERSION/;
-$VERSION = '1.0';
+$VERSION = '1.1';
 
 # ------------------------------------------------------------------------------
 const my $DB7_SIGNATURE    => 0x04;
@@ -202,7 +202,8 @@ sub write_file
         {
             if( $self->{'vars'}->{$key}->[0] eq 'I' )
             {
-                print {$dbf} pack( 'N', ( $record->{$key} || 0 ) );
+                print {$dbf} pack( 'l>', ( $record->{$key} || 0 ) );
+                print $record->{$key}."\n";
             }
             else
             {
@@ -251,6 +252,14 @@ sub _write_header
 
 __END__
 
+=head1 NAME
+
+DB7 - create and write dBase7 files.
+
+=head1 VERSION
+
+Version 1.1
+
 =head1 SYNOPSIS
 
   use DB7;
@@ -288,14 +297,7 @@ __END__
 
 This module can write dBase 7 files. MDX (indexes) and MEMO are not supported. 
 
-Known field types: 
-
-B<D> date 
-B<I> integer 
-B<L> logical 
-B<C> character 
-
-=head1 METHODS
+=head1 SUBROUTINES/METHODS
 
 =over
 
@@ -319,11 +321,35 @@ Record is hash ref (name => value). Unknown keys are ignored.
 
 =back
 
-=head1 AUTHOR
+=head1 CONFIGURATION AND ENVIRONMENT
 
-(c) 2015 Vsevolod Lutovinov
+Use B<DB7::new()> arguments, no additional configuration required. 
+
+=head1 DIAGNOSTICS
+
+B<DB7::add_record()> and B<DB7::write_file()> methods returns undef if success,
+or error message. This message can be readed using B<DB7::errstr()> method after
+B<DB7::new()> call also. 
+
+=head1 BUGS AND LIMITATIONS
+
+Incorrect negative INTEGER handling.
+
+Works with field types: 
+
+B<D> date 
+B<I> integer 
+B<L> logical 
+B<C> character 
+
+
+=head1 LICENSE AND COPYRIGHT
 
 All rights reserved. This package is free software; you can
 redistribute it and/or modify it under the same terms as Perl itself.
 
+
+=head1 AUTHOR
+
+(c) 2015 Vsevolod Lutovinov
 Contact the author at klopp@yandex.ru.
