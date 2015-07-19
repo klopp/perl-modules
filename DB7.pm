@@ -21,6 +21,7 @@ const my $DB7_RECNAME_MAX  => 32;
 const my $DB7_RECORD_SIGN  => 32;               # 32 - regular, 42 - deleted
 const my $DB7_DATE_SIZE    => 8;
 const my $DB7_BOOL_SIZE    => 1;
+const my $DB7_INT_SIZE     => 4;
 const my $DB7_DEF_CODEPAGE => 0x01;
 const my $DB7_DEF_LANGUAGE => 'DBWINUS0';
 
@@ -82,6 +83,8 @@ sub new
             if $vars->{$key}->[0] eq 'D';
         $self->{'vars'}->{$key}->[1] = $DB7_BOOL_SIZE
             if $vars->{$key}->[0] eq 'L';
+        $self->{'vars'}->{$key}->[1] = $DB7_INT_SIZE
+            if $vars->{$key}->[0] eq 'I';
         $self->{'record_size'} += $self->{'vars'}->{$key}->[1];
         $self->{'header_size'} += $DB7_FDECSR_SIZE;
     }
@@ -94,50 +97,6 @@ sub errstr
 {
     my ( $self ) = @_;
     return $self->{'error'};
-}
-
-# ------------------------------------------------------------------------------
-sub _e
-{
-    my ( $self, $error ) = @_;
-    $self->{'error'} = $error;
-    return $self->{'error'};
-}
-
-# ------------------------------------------------------------------------------
-sub _validate_value
-{
-    my ( $self, $name, $value ) = @_;
-
-    if( $self->{'vars'}->{$name}->[0] eq 'I' )
-    {
-        if(    $value !~ /^[-+]?\d+$/
-            || $value < $DB7_INT_MIN
-            || $value > $DB7_INT_MAX )
-        {
-            return $self->_e( "Invalid INTEGER value of '$name': $value" );
-        }
-    }
-    else
-    {
-        my $length = length $value;
-        if( $length > $self->{'vars'}->{$name}->[1] )
-        {
-            return $self->_e( "Too long value for field '$name': $length/"
-                    . $self->{'vars'}->{$name}->[1] );
-        }
-    }
-
-    if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
-    {
-        return $self->_e( "Invalid DATE value for '$name': '$value'" );
-    }
-
-    if(    $self->{'vars'}->{$name}->[0] eq 'L'
-        && $value !~ /^[TYNF ?]$/i )
-    {
-        return $self->_e( "Invalid LOGICAL value for '$name': '$value'" );
-    }
 }
 
 # ------------------------------------------------------------------------------
@@ -203,7 +162,6 @@ sub write_file
             if( $self->{'vars'}->{$key}->[0] eq 'I' )
             {
                 print {$dbf} pack( 'l>', ( $record->{$key} || 0 ) );
-                print $record->{$key}."\n";
             }
             else
             {
@@ -220,6 +178,50 @@ sub write_file
         'Can not CLOSE "' . $self->{'file'} . '": ' . $ERRNO );
 
     return $self->{'error'};
+}
+
+# ------------------------------------------------------------------------------
+sub _e
+{
+    my ( $self, $error ) = @_;
+    $self->{'error'} = $error;
+    return $self->{'error'};
+}
+
+# ------------------------------------------------------------------------------
+sub _validate_value
+{
+    my ( $self, $name, $value ) = @_;
+
+    if( $self->{'vars'}->{$name}->[0] eq 'I' )
+    {
+        if(    $value !~ /^[-+]?\d+$/
+            || $value < $DB7_INT_MIN
+            || $value > $DB7_INT_MAX )
+        {
+            return $self->_e( "Invalid INTEGER value of '$name': $value" );
+        }
+    }
+    else
+    {
+        my $length = length $value;
+        if( $length > $self->{'vars'}->{$name}->[1] )
+        {
+            return $self->_e( "Too long value for field '$name': $length/"
+                    . $self->{'vars'}->{$name}->[1] );
+        }
+    }
+
+    if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
+    {
+        return $self->_e( "Invalid DATE value for '$name': '$value'" );
+    }
+
+    if(    $self->{'vars'}->{$name}->[0] eq 'L'
+        && $value !~ /^[TYNF ?]$/i )
+    {
+        return $self->_e( "Invalid LOGICAL value for '$name': '$value'" );
+    }
 }
 
 # ------------------------------------------------------------------------------
@@ -271,7 +273,7 @@ Version 1.1
       nocheck => 1
     },
     {
-      INT_FLD  => [ 'I', 4 ],   # integer field, length = 4
+      INT_FLD  => [ 'I' ],      # integer field, length always 4
       DATE_FLD => [ 'D' ],      # date field, length always 8
       BOOL_FLD => [ 'L' ],      # bool field, length always 1
       CHAR_FLD => [ 'C', 128 ], # char field, length = 128
