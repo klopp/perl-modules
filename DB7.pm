@@ -20,7 +20,7 @@ const my $DB7_INT_MIN      => -2_147_483_648;
 const my $DB7_RECNAME_MAX  => 32;
 const my $DB7_DEF_CODEPAGE => 0x01;
 const my $DB7_DEF_LANGUAGE => 'DBWINUS0';
-const my $DB7_HEADER       => '
+const my $DB7_HEADER       => <<'EOL';
 C       //  signature
 C3      //  created, YMD
 L       //  records number, as 32-bit unsigned
@@ -31,7 +31,14 @@ C       //  dBase IV, Visual FoxPro, XBase codepage[1]
 S       //  reserved[2]
 a32     //  language driver
 L       //  reserved[4]
-';
+EOL
+const my $DB7_FIELD_DESCR =>  <<'EOL'; 
+a32     //  field name
+a       //  field type[1]
+C       //  field length, 1st byte
+C       //  2nd byte of length (type=C) or 0
+a13     //  reserved[2], MDX, reserved[2], autoincrement[int32], reserved[4]
+EOL
 
 # ------------------------------------------------------------------------------
 sub new
@@ -159,45 +166,22 @@ sub write_file
 
     return $self->{'error'} if $self->_write_header( $dbf );
 
+    my $field_descr = $DB7_FIELD_DESCR;
+    $field_descr =~ s[\s+//.+$][]gm;
+    $field_descr =~ s[\s+][]g;
+
     foreach my $key ( sort keys %{ $self->{'vars'} } )
     {
-        # field name (32 chars, zero-padded)
-        print $dbf pack( 'a32', $key );
-
-        # field type[1]
-        print $dbf pack( 'a', $self->{'vars'}->{$key}->[0] );
-
-        # field length
-        print $dbf pack( 'C', $self->{'vars'}->{$key}->[1] & $DB7_CHAR_MAX );
-
-        if( $self->{'vars'}->{$key}->[0] eq 'C' )
-        {
-            # char field, second byte of length
-            print $dbf pack(
-                'C',
-                ( $self->{'vars'}->{$key}->[1] << $DB7_CHAR_BITS )
-                    & $DB7_CHAR_MAX );
-        }
-        else
-        {
-            # non-char field, decimal
-            print $dbf pack( 'C', 0 );
-        }
-
-        # reserved[2]
-        print $dbf pack( 'CC', 0, 0 );
-
-        # mdx
-        print $dbf pack( 'C', 0 );
-
-        # reserved[2]
-        print $dbf pack( 'CC', 0, 0 );
-
-        # autoincrement, int32
-        print $dbf pack( 'L', 0 );
-
-        # reserved[4]
-        print $dbf pack( 'L', 0 );
+        print $dbf pack(
+            $field_descr,
+            $key,
+            $self->{'vars'}->{$key}->[0],
+            ( $self->{'vars'}->{$key}->[1] & $DB7_CHAR_MAX ),
+            (   $self->{'vars'}->{$key}->[0] eq 'C'
+                ? ( ( $self->{'vars'}->{$key}->[1] << $DB7_CHAR_BITS )
+                    & $DB7_CHAR_MAX )
+                : 0 ),
+            '' );
     }
     print $dbf pack( 'C', $DB7_HEADER_END );
 
