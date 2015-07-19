@@ -2,7 +2,7 @@
 package DB7;
 use strict;
 use warnings;
-use Readonly;
+use Const::Fast;
 use English qw /-no_match_vars/;
 
 # ------------------------------------------------------------------------------
@@ -10,15 +10,15 @@ use vars qw /$VERSION/;
 $VERSION = '1.0';
 
 # ------------------------------------------------------------------------------
-Readonly::Scalar my $DB7_HEADER_END   => 0x0D;
-Readonly::Scalar my $DB7_FILE_END     => 0x1A;
-Readonly::Scalar my $DB7_CHAR_MAX     => 255;
-Readonly::Scalar my $DB7_CHAR_BITS    => 8;
-Readonly::Scalar my $DB7_INT_MAX      => 2_147_483_647;
-Readonly::Scalar my $DB7_INT_MIN      => -2_147_483_648;
-Readonly::Scalar my $DB7_RECNAME_MAX  => 32;
-Readonly::Scalar my $DB7_DEF_CODEPAGE => 0x01;
-Readonly::Scalar my $DB7_DEF_LANGUAGE => 'DBWINUS0';
+const my $DB7_HEADER_END   => 0x0D;
+const my $DB7_FILE_END     => 0x1A;
+const my $DB7_CHAR_MAX     => 255;
+const my $DB7_CHAR_BITS    => 8;
+const my $DB7_INT_MAX      => 2_147_483_647;
+const my $DB7_INT_MIN      => -2_147_483_648;
+const my $DB7_RECNAME_MAX  => 32;
+const my $DB7_DEF_CODEPAGE => 0x01;
+const my $DB7_DEF_LANGUAGE => 'DBWINUS0';
 
 # ------------------------------------------------------------------------------
 sub new
