@@ -96,6 +96,11 @@ Parse given arrayref, or @ARGV if arrayref is empty. Return hash or hashref.
 
 =back
 
+=head1 BUGS AND LIMITATIONS
+
+B<-foo -bar> produces B<$argv{foo}=1, $argv{bar}=1>, 
+NOT B<$argv{foo}='-bar'>. 
+
 =head1 LICENSE AND COPYRIGHT
 
 Coyright (C) 2015 Vsevolod Lutovinov.
