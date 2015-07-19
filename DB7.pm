@@ -41,7 +41,9 @@ C       //  2nd byte of length (type=C) or 0
 a13     //  reserved[2], MDX, reserved[2], autoincrement[int32], reserved[4]
 EOL
 const my $DB7_FDECSR_SIZE => length( pack $DB7_FIELD_DESCR, 0 );
-const my $DB7_RECORD_SIGN => 32;    # # 32 - regular, 42 - deleted
+const my $DB7_RECORD_SIGN => 32;    # 32 - regular, 42 - deleted
+const my $DB7_DATE_SIZE   => 8;
+const my $DB7_BOOL_SIZE   => 1;
 
 # ------------------------------------------------------------------------------
 sub new
@@ -69,8 +71,10 @@ sub new
             "Invalid type '" . $vars->{$key}->[0] . "' for '$key'", last
             if $vars->{$key}->[0] !~ /^[IDLC]$/;
 
-        $self->{'vars'}->{$key}->[1] = 8 if $vars->{$key}->[0] eq 'D';
-        $self->{'vars'}->{$key}->[1] = 1 if $vars->{$key}->[0] eq 'L';
+        $self->{'vars'}->{$key}->[1] = $DB7_DATE_SIZE
+            if $vars->{$key}->[0] eq 'D';
+        $self->{'vars'}->{$key}->[1] = $DB7_BOOL_SIZE
+            if $vars->{$key}->[0] eq 'L';
         $self->{'record_size'} += $self->{'vars'}->{$key}->[1];
         $self->{'header_size'} += $DB7_FDECSR_SIZE;
     }
