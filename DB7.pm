@@ -32,13 +32,16 @@ S       //  reserved[2]
 a32     //  language driver
 L       //  reserved[4]
 EOL
-const my $DB7_FIELD_DESCR =>  <<'EOL'; 
+const my $DB7_HEADER_SIZE => length( pack $DB7_HEADER, 0 );
+const my $DB7_FIELD_DESCR => <<'EOL';
 a32     //  field name
 a       //  field type[1]
 C       //  field length, 1st byte
 C       //  2nd byte of length (type=C) or 0
 a13     //  reserved[2], MDX, reserved[2], autoincrement[int32], reserved[4]
 EOL
+const my $DB7_FDECSR_SIZE => length( pack $DB7_FIELD_DESCR, 0 );
+const my $DB7_RECORD_SIGN => 32;    # # 32 - regular, 42 - deleted
 
 # ------------------------------------------------------------------------------
 sub new
@@ -49,7 +52,7 @@ sub new
 
     $self->{'vars'}        = $vars;
     $self->{'record_size'} = 0;
-    $self->{'header_size'} = 69;
+    $self->{'header_size'} = $DB7_HEADER_SIZE + 1;
     $self->{'records'}     = [];
     $self->{'error'}       = undef;
 
@@ -69,7 +72,7 @@ sub new
         $self->{'vars'}->{$key}->[1] = 8 if $vars->{$key}->[0] eq 'D';
         $self->{'vars'}->{$key}->[1] = 1 if $vars->{$key}->[0] eq 'L';
         $self->{'record_size'} += $self->{'vars'}->{$key}->[1];
-        $self->{'header_size'} += 48;
+        $self->{'header_size'} += $DB7_FDECSR_SIZE;
     }
 
     return $self;
@@ -187,8 +190,7 @@ sub write_file
 
     foreach my $record ( @{ $self->{'records'} } )
     {
-        # 32 - regular record, 42 - deleted record
-        print $dbf pack( 'C', 32 );
+        print $dbf pack( 'C', $DB7_RECORD_SIGN );
         foreach my $key ( sort keys %{$record} )
         {
             if( $self->{'vars'}->{$key}->[0] eq 'I' )
