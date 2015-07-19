@@ -212,9 +212,12 @@ sub _validate_value
         }
     }
 
-    if( $self->{'vars'}->{$name}->[0] eq 'D' && $value !~ /^\d{8}$/ )
+    if( $self->{'vars'}->{$name}->[0] eq 'D' )
     {
-        return $self->_e( "Invalid DATE value for '$name': '$value'" );
+        if( $value !~ /^\d{4}(\d\d)(\d\d)$/ || $1 > 12 || $2 > 31 )
+        {
+            return $self->_e( "Invalid DATE value for '$name': '$value'" );
+        }
     }
 
     if(    $self->{'vars'}->{$name}->[0] eq 'L'
