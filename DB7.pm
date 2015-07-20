@@ -132,6 +132,34 @@ sub del_record {
 }
 
 # ------------------------------------------------------------------------------
+sub update_record {
+    my ( $self, $idx, $data ) = @_;
+
+    return $self->{'error'} if $self->{'error'};
+
+    return $self->_e("Can not update record in empty set")
+        if $#{ $self->{'records'} } < 0;
+
+    return $self->_e( "Invalid index '$idx' (total records: "
+            . ( $#{ $self->{'records'} } + 1 )
+            . ')' )
+        if $idx !~ /^\d+$/ || $idx > $#{ $self->{'records'} };
+
+    my $rec = $self->{'records'}->[$idx];
+    foreach my $name ( keys %{ $self->{'vars'} } ) {
+        next unless exists $data->{$name};
+        my $value = $data->{$name};
+        if ($value) {
+            $self->_validate_value( $name, $value ) unless $self->{'nocheck'};
+            return $self->{'error'} if $self->{'error'};
+        }
+        $rec->{$name} = $value || '';
+    }
+
+    return;
+}
+
+# ------------------------------------------------------------------------------
 sub write_file {
     my ( $self, $filename ) = @_;
 
