@@ -341,10 +341,7 @@ Known bug: incorrect negative INTEGER handling (map to unsigned).
 
 Works only with field types: 
 
-B<D> date 
-B<I> integer 
-B<L> logical 
-B<C> character 
+B<D> date, B<I> integer, B<L> logical, B<C> character 
 
 MDX (indexes) and MEMO are not supported.
 
