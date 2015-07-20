@@ -118,6 +118,11 @@ sub add_record {
 
 # ------------------------------------------------------------------------------
 sub del_record {
+    goto &remove_record;
+}
+
+# ------------------------------------------------------------------------------
+sub remove_record {
     my ( $self, $idx ) = @_;
 
     return $self->{'error'} if $self->{'error'};
@@ -347,6 +352,7 @@ B<nocheck> - skip values validation if is set
 
 Record is hash ref (name => value). Unknown keys are ignored.
 
+=item remove_record( I<$idx> )
 =item del_record( I<$idx> )
 
 Delete record.
