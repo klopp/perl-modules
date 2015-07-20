@@ -5,10 +5,18 @@ use strict;
 use warnings;
 use Exporter;
 use base 'Exporter';
+use Const::Fast;
 
 # ------------------------------------------------------------------------------
 our $VERSION = '1.0';
-our @EXPORT  = qw/argv/;
+our @EXPORT  = qw/argv getopt/;
+const my $DASH => q/-/;
+
+# ------------------------------------------------------------------------------
+sub getopt
+{
+    goto &argv;
+}
 
 # ------------------------------------------------------------------------------
 sub argv
@@ -18,15 +26,15 @@ sub argv
 
     foreach ( @{$av} )
     {
-        my ( $arg ) = /^-(.+)$/;
+        my ( $arg ) = /^-(.+)$/o;
         $arg ||= $_;
-        
-        $argv{$lastarg} = '-', undef $lastarg, next
-            if $_ eq '-' && $lastarg;
 
-        next if $_ eq '-' && !$lastarg;
-        
-        if( /^-/ )
+        $argv{$lastarg} = $DASH, undef $lastarg, next
+            if $_ eq $DASH && $lastarg;
+
+        next if $_ eq $DASH && !$lastarg;
+
+        if( /^-/o )
         {
             $lastarg = $arg;
             $argv{$arg} = 1;
@@ -77,7 +85,6 @@ Version 1.0
 Parse @ARGV or given arrayref. Rules:
 
 B<->        : produces NO action
-
 B<-foo>     : $argv{'foo'} => 1
 
 B<-foo ->   : $argv{'foo'} => '-'
@@ -101,6 +108,10 @@ Parse given arrayref, or @ARGV if I<$arrayref> is empty. Return hash or hashref.
 B<-foo -bar> produces B<$argv{foo}=1, $argv{bar}=1>, 
 NOT B<$argv{foo}='-bar'>. 
 
+=head1 INCOMPATIBILITIES
+
+Any module with B<getopt> export.
+
 =head1 LICENSE AND COPYRIGHT
 
 Coyright (C) 2015 Vsevolod Lutovinov.
@@ -118,4 +129,3 @@ Contact the author at klopp@yandex.ru.
 Source code and issues can be found here:
  <https://github.com/klopp/perl-modules>
  
-
