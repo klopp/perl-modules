@@ -8,25 +8,22 @@ use base 'Exporter';
 use Const::Fast;
 
 # ------------------------------------------------------------------------------
-our $VERSION = '1.0';
-our @EXPORT_OK  = qw/argv getopt/;
+our $VERSION   = '1.0';
+our @EXPORT_OK = qw/argv getopt/;
 const my $DASH => q/-/;
 
 # ------------------------------------------------------------------------------
-sub getopt
-{
+sub getopt {
     goto &argv;
 }
 
 # ------------------------------------------------------------------------------
-sub argv
-{
+sub argv {
     my $av = shift || \@ARGV;
     my ( $lastarg, %argv );
 
-    foreach ( @{$av} )
-    {
-        my ( $arg ) = /^-(.+)$/o;
+    foreach ( @{$av} ) {
+        my ($arg) = /^-(.+)$/o;
         $arg ||= $_;
 
         $argv{$lastarg} = $DASH, undef $lastarg, next
@@ -34,20 +31,16 @@ sub argv
 
         next if $_ eq $DASH && !$lastarg;
 
-        if( /^-/o )
-        {
+        if (/^-/o) {
             $lastarg = $arg;
             $argv{$arg} = 1;
         }
-        else
-        {
-            if( $lastarg )
-            {
+        else {
+            if ($lastarg) {
                 $argv{$lastarg} = $_;
                 undef $lastarg;
             }
-            else
-            {
+            else {
                 $argv{$arg} = 1;
             }
         }
@@ -85,6 +78,7 @@ Version 1.0
 Parse @ARGV or given arrayref. Rules:
 
 B<->        : produces NO action
+
 B<-foo>     : $argv{'foo'} => 1
 
 B<-foo ->   : $argv{'foo'} => '-'
