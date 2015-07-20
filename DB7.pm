@@ -54,8 +54,7 @@ $DB7_FDESCR_TPL =~ s{\s+}{}g;
 const my $DB7_FDECSR_SIZE => length( pack $DB7_FDESCR_TPL, 0 );
 
 # ------------------------------------------------------------------------------
-sub new
-{
+sub new {
     my ( $class, $opt, $vars ) = @_;
 
     my $self = bless $opt, $class;
@@ -63,16 +62,15 @@ sub new
     $self->{'vars'}        = $vars;
     $self->{'record_size'} = 0;
     $self->{'header_size'} = $DB7_HEADER_SIZE + 1;
-    $self->{'records'}     = [];
+    $self->{'records'}     = ();
     $self->{'error'}       = undef;
 
     $self->{'language'} ||= $DB7_DEF_LANGUAGE;
 
-    foreach my $key ( keys %{$vars} )
-    {
+    foreach my $key ( keys %{$vars} ) {
         my $length = length $key;
-        $self->{'error'} =
-            "Invalid name length for '$key' ($length chars, 32 max)", last
+        $self->{'error'}
+            = "Invalid name length for '$key' ($length chars, 32 max)", last
             if $length > $DB7_RECNAME_MAX;
 
         $self->{'error'} = "Invalid type '$vars->{$key}->[0]' for '$key'", last
@@ -92,25 +90,21 @@ sub new
 }
 
 # ------------------------------------------------------------------------------
-sub errstr
-{
-    my ( $self ) = @_;
+sub errstr {
+    my ($self) = @_;
     return $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
-sub add_record
-{
+sub add_record {
     my ( $self, $data ) = @_;
 
     return $self->{'error'} if $self->{'error'};
 
     my %rec;
-    foreach my $name ( keys %{ $self->{'vars'} } )
-    {
+    foreach my $name ( keys %{ $self->{'vars'} } ) {
         my $value = $data->{$name};
-        if( $value )
-        {
+        if ($value) {
             $self->_validate_value( $name, $value ) unless $self->{'nocheck'};
             return $self->{'error'} if $self->{'error'};
         }
@@ -121,25 +115,39 @@ sub add_record
 }
 
 # ------------------------------------------------------------------------------
-sub write_file
-{
-    my ( $self ) = @_;
+sub del_record {
+    my ( $self, $idx ) = @_;
+
+    return $self->{'error'} if $self->{'error'};
+
+    return $self->_e("Can not delete records from empty set")
+        if $#{ $self->{'records'} } < 0;
+
+    return $self->_e( "Invalid index '$idx' (total records: "
+            . ( $#{ $self->{'records'} } + 1 )
+            . ')' )
+        if $idx !~ /^\d+$/ || $idx > $#{ $self->{'records'} };
+    splice @{ $self->{records} }, $idx, 1;
+    return;
+}
+
+# ------------------------------------------------------------------------------
+sub write_file {
+    my ( $self, $filename ) = @_;
 
     return $self->{'error'} if $self->{'error'};
 
     return $self->_e(
         'No fields description given in ' . __PACKAGE__ . '::new()' )
-        if( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
+        if ( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
 
-    open my $dbf, '>:raw', $self->{'file'}
-        or
-        return $self->_e( "Can not OPEN \"$self->{'file'}\": $ERRNO" );
+    open my $dbf, '>:raw', $filename
+        or return $self->_e("Can not OPEN \"$filename\": $ERRNO");
     binmode $dbf;
 
-    return $self->{'error'} if $self->_write_header( $dbf );
+    return $self->{'error'} if $self->_write_header($dbf);
 
-    foreach my $key ( sort keys %{ $self->{'vars'} } )
-    {
+    foreach my $key ( sort keys %{ $self->{'vars'} } ) {
         print {$dbf} pack(
             $DB7_FDESCR_TPL,
             $key,
@@ -148,105 +156,90 @@ sub write_file
             (   $self->{'vars'}->{$key}->[0] eq 'C'
                 ? ( ( $self->{'vars'}->{$key}->[1] << $DB7_CHAR_BITS )
                     & $DB7_CHAR_MAX )
-                : 0 ),
-            '' );
+                : 0
+            ),
+            ''
+        );
     }
     print {$dbf} pack( 'C', $DB7_HEADER_END );
 
-    foreach my $record ( @{ $self->{'records'} } )
-    {
+    foreach my $record ( @{ $self->{'records'} } ) {
         print {$dbf} pack( 'C', $DB7_RECORD_SIGN );
-        foreach my $key ( sort keys %{$record} )
-        {
-            if( $self->{'vars'}->{$key}->[0] eq 'I' )
-            {
+        foreach my $key ( sort keys %{$record} ) {
+            if ( $self->{'vars'}->{$key}->[0] eq 'I' ) {
                 print {$dbf} pack( 'l>', ( $record->{$key} || 0 ) );
             }
-            else
-            {
+            else {
                 print {$dbf} pack(
                     'A' . ( $self->{'vars'}->{$key}->[1] ),
-                    $record->{$key} );
+                    $record->{$key}
+                );
             }
         }
     }
 
     print {$dbf} pack( 'C', $DB7_FILE_END );
     close $dbf
-        or return $self->_e(
-        "Can not CLOSE \"$self->{'file'}\": $ERRNO" );
+        or return $self->_e("Can not CLOSE \"$filename\": $ERRNO");
 
     return $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
-sub _e
-{
+sub _e {
     my ( $self, $error ) = @_;
     $self->{'error'} = $error;
     return $self->{'error'};
 }
 
 # ------------------------------------------------------------------------------
-sub _validate_value
-{
+sub _validate_value {
     my ( $self, $name, $value ) = @_;
 
-    if( $self->{'vars'}->{$name}->[0] eq 'I' )
-    {
-        if(    $value !~ /^[-+]?\d+$/
+    if ( $self->{'vars'}->{$name}->[0] eq 'I' ) {
+        if (   $value !~ /^[-+]?\d+$/
             || $value < $DB7_INT_MIN
             || $value > $DB7_INT_MAX )
         {
-            return $self->_e( "Invalid INTEGER value of '$name': $value" );
+            return $self->_e("Invalid INTEGER value of '$name': $value");
         }
     }
-    else
-    {
+    else {
         my $length = length $value;
-        if( $length > $self->{'vars'}->{$name}->[1] )
-        {
+        if ( $length > $self->{'vars'}->{$name}->[1] ) {
             return $self->_e( "Too long value for field '$name': $length/"
                     . $self->{'vars'}->{$name}->[1] );
         }
     }
 
-    if( $self->{'vars'}->{$name}->[0] eq 'D' )
-    {
-        if( $value !~ /^\d{4}(\d\d)(\d\d)$/ || $1 > 12 || $2 > 31 )
-        {
-            return $self->_e( "Invalid DATE value for '$name': '$value'" );
+    if ( $self->{'vars'}->{$name}->[0] eq 'D' ) {
+        if ( $value !~ /^\d{4}(\d\d)(\d\d)$/ || $1 > 12 || $2 > 31 ) {
+            return $self->_e("Invalid DATE value for '$name': '$value'");
         }
     }
 
-    if(    $self->{'vars'}->{$name}->[0] eq 'L'
+    if (   $self->{'vars'}->{$name}->[0] eq 'L'
         && $value !~ /^[TYNF ?]$/i )
     {
-        return $self->_e( "Invalid LOGICAL value for '$name': '$value'" );
+        return $self->_e("Invalid LOGICAL value for '$name': '$value'");
     }
 }
 
 # ------------------------------------------------------------------------------
-sub _write_header
-{
+sub _write_header {
     my ( $self, $dbf ) = @_;
 
     return $self->{'error'} if $self->{'error'};
 
-    my ( undef, undef, undef, $mday, $mon, $year ) = gmtime( time );
+    my ( undef, undef, undef, $mday, $mon, $year ) = gmtime(time);
 
-    print {$dbf} pack(
-        $DB7_HEADER_TPL,
-        $DB7_SIGNATURE,
-        $year, $mon + 1, $mday,
-        scalar @{ $self->{'records'} },
-        $self->{'header_size'},
-        $self->{'record_size'},
-        '',
-        $DB7_DEF_CODEPAGE,
-        0,
-        $self->{'language'},
-        0 );
+    print {$dbf} pack( $DB7_HEADER_TPL,
+        $DB7_SIGNATURE,                 $year,
+        $mon + 1,                       $mday,
+        scalar @{ $self->{'records'} }, $self->{'header_size'},
+        $self->{'record_size'},         '',
+        $DB7_DEF_CODEPAGE,              0,
+        $self->{'language'},            0 );
 
     return $self->{'error'};
 }
@@ -270,7 +263,6 @@ Version 1.1
   my $db7 = new DB7
   (
     {
-      file => 'filename.dbf',
       language => 'db866ru0',
       nocheck => 1
     },
@@ -283,7 +275,7 @@ Version 1.1
   );
   die $db7->errstr if $db7->errstr;
 
-  $db7->add_record
+  die $db7->errstr if $db7->add_record
   (
     {
       INT_FLD => 1234,
@@ -292,10 +284,8 @@ Version 1.1
       CHAR_FLD => 'Some string'
     }
   );
-  die $db7->errstr if $db7->errstr;
 
-  $db7->write_file();
-  die $db7->errstr if $db7->errstr;
+  die $db7->errstr if $db7->write_file('/tmp/file.dbf');
 
 =head1 DESCRIPTION
 
@@ -319,7 +309,7 @@ B<nocheck> - skip values validation if is set
 
 Record is hash ref (name => value). Unknown keys are ignored.
 
-=item write_file()
+=item write_file( I<$filename> )
 
 =item errstr()
 
