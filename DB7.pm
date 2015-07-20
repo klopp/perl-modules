@@ -16,6 +16,8 @@ const my $DB7_CHAR_MAX     => 255;
 const my $DB7_CHAR_BITS    => 8;
 const my $DB7_INT_MAX      => 2_147_483_647;
 const my $DB7_INT_MIN      => -2_147_483_648;
+const my $DB7_MONTH_MAX    => 12;
+const my $DB7_MDAY_MAX     => 31;
 const my $DB7_RECNAME_MAX  => 32;
 const my $DB7_RECORD_SIGN  => 32;               # 32 - regular, 42 - deleted
 const my $DB7_DATE_SIZE    => 8;
@@ -120,7 +122,7 @@ sub del_record {
 
     return $self->{'error'} if $self->{'error'};
 
-    return $self->_e("Can not delete records from empty set")
+    return $self->_e('Can not delete records from empty set')
         if $#{ $self->{'records'} } < 0;
 
     return $self->_e( "Invalid index '$idx' (total records: "
@@ -137,7 +139,7 @@ sub update_record {
 
     return $self->{'error'} if $self->{'error'};
 
-    return $self->_e("Can not update record in empty set")
+    return $self->_e('Can not update record in empty set')
         if $#{ $self->{'records'} } < 0;
 
     return $self->_e( "Invalid index '$idx' (total records: "
@@ -165,7 +167,7 @@ sub write_file {
 
     return $self->{'error'} if $self->{'error'};
 
-    $filename ||= $self->{'file'}; # 1.1 support
+    $filename ||= $self->{'file'};    # 1.1 support
 
     return $self->_e(
         'No fields description given in ' . __PACKAGE__ . '::new()' )
@@ -243,7 +245,10 @@ sub _validate_value {
     }
 
     if ( $self->{'vars'}->{$name}->[0] eq 'D' ) {
-        if ( $value !~ /^\d{4}(\d\d)(\d\d)$/ || $1 > 12 || $2 > 31 ) {
+        if (   $value !~ /^\d{4}(\d\d)(\d\d)$/
+            || $1 > $DB7_MONTH_MAX
+            || $2 > $DB7_MDAY_MAX )
+        {
             return $self->_e("Invalid DATE value for '$name': '$value'");
         }
     }
