@@ -6,7 +6,7 @@ use English qw /-no_match_vars/;
 
 # ------------------------------------------------------------------------------
 use vars qw /$VERSION/;
-$VERSION = '1.1';
+$VERSION = '1.2';
 
 # ------------------------------------------------------------------------------
 const my $DB7_SIGNATURE    => 0x04;
@@ -165,6 +165,8 @@ sub write_file {
 
     return $self->{'error'} if $self->{'error'};
 
+    $filename ||= $self->{'file'}; # 1.1 support
+
     return $self->_e(
         'No fields description given in ' . __PACKAGE__ . '::new()' )
         if ( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
@@ -283,7 +285,7 @@ DB7 - create and write dBase7 files.
 
 =head1 VERSION
 
-Version 1.1
+Version 1.2
 
 =head1 SYNOPSIS
 
@@ -313,6 +315,11 @@ Version 1.1
     }
   );
 
+  die $db7->errstr if $db7->update_record
+      ( 0, { INT_FLD => 4321 } );
+
+  die $db7->errstr if $db7->del_record( 1 );
+
   die $db7->errstr if $db7->write_file('/tmp/file.dbf');
 
 =head1 DESCRIPTION
@@ -327,8 +334,6 @@ This module can write dBase 7 files.
 
 Options is hash ref, valid fields are:
 
-B<file> - filename to write, required
-
 B<language> - language driver ID, default is 'DBWINUS0' (ANSI)
 
 B<nocheck> - skip values validation if is set
@@ -336,6 +341,14 @@ B<nocheck> - skip values validation if is set
 =item add_record( I<$record> )
 
 Record is hash ref (name => value). Unknown keys are ignored.
+
+=item del_record( I<$idx> )
+
+Delete record.
+
+=item update_record( I<$idx>, I<$data> )
+
+Update record. Keys not present in I<$data> remain unchanged.
 
 =item write_file( I<$filename> )
 
@@ -349,9 +362,10 @@ Use B<DB7::new()> arguments, no additional configuration required.
 
 =head1 DIAGNOSTICS
 
-B<DB7::add_record()> and B<DB7::write_file()> methods returns undef if success,
-or error message. This message can be readed using B<DB7::errstr()> method after
-B<DB7::new()> call also. 
+B<DB7::add_record()>, B<DB7::del_record()>, B<DB7::update_record()> 
+and B<DB7::write_file()> methods returns undef if success,
+or error message. This message can be readed using B<DB7::errstr()> method 
+after B<DB7::new()> call also. 
 
 =head1 BUGS AND LIMITATIONS
 
