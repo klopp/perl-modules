@@ -12,7 +12,7 @@ $VERSION = '1.2';
 const my $DB7_SIGNATURE    => 0x04;
 const my $DB7_HEADER_END   => 0x0D;
 const my $DB7_FILE_END     => 0x1A;
-const my $DB7_CHAR_MAX     => 255;
+const my $DB7_CHAR_MAX     => 0xFF;
 const my $DB7_CHAR_BITS    => 8;
 const my $DB7_INT_MAX      => 2_147_483_647;
 const my $DB7_INT_MIN      => -2_147_483_648;
@@ -25,6 +25,7 @@ const my $DB7_BOOL_SIZE    => 1;
 const my $DB7_INT_SIZE     => 4;
 const my $DB7_DEF_CODEPAGE => 0x01;
 const my $DB7_DEF_LANGUAGE => 'DBWINUS0';
+const my $DB7_VALID_TYPES  => qr/^[IDLC]$/;
 
 const my $DB7_HEADER => <<'EOL';
 C       //  signature
@@ -76,7 +77,9 @@ sub new {
             if $length > $DB7_RECNAME_MAX;
 
         $self->{'error'} = "Invalid type '$vars->{$key}->[0]' for '$key'", last
-            if $vars->{$key}->[0] !~ /^[IDLC]$/;
+            if $vars->{$key}->[0] !~ $DB7_VALID_TYPES;
+
+        #            if $vars->{$key}->[0] !~ /^[IDLC]$/;
 
         $self->{'vars'}->{$key}->[1] = $DB7_DATE_SIZE
             if $vars->{$key}->[0] eq 'D';
@@ -167,16 +170,59 @@ sub update_record {
 }
 
 # ------------------------------------------------------------------------------
+=pod
+sub read_file {
+    my ( $self, $filename ) = @_;
+
+    open my $dbf, '<:raw', $filename
+        or return $self->_e("Can not OPEN \"$filename\": $ERRNO");
+    binmode $dbf;
+
+    close $dbf, return $self->_e("Can not READ \"$filename\": $ERRNO")
+        unless read( {$dbf}, my $buf, $DB7_HEADER_SIZE ) != $DB7_HEADER_SIZE;
+
+    (   $self->{'signature'}, undef, undef, undef, undef,
+        $self->{'header_size'},
+        $self->{'record_size'}
+    ) = unpack $DB7_HEADER_TPL, $buf;
+
+    close $dbf,
+        return $self->_e("Invalid file signature: \"$self->{'signature'}\"")
+        unless $self->{'signature'} == $DB7_SIGNATURE;
+
+    my $readed        = 0;
+    my $fields_length = $self->{'header_size'} - $DB7_HEADER_SIZE;
+
+    $self->{'records'} = ();
+    $self->{'vars'}    = {};
+
+    while ( $readed < $fields_length ) {
+        close $dbf, return $self->_e("Can not READ \"$filename\": $ERRNO")
+            unless read( {$dbf}, $buf, $DB7_FDECSR_SIZE ) != $DB7_FDECSR_SIZE;
+        my ( $name, $type, $s1, $s2 ) = unpack $DB7_FDESCR_TPL, $buf;
+
+        close $dbf, return $self->_e("Invalid type '$type' for '$name'")
+            if $type !~ $DB7_VALID_TYPES;
+
+        $self->{'vars'}->{$name} = [$type];
+        $self->{'vars'}->{$name}->[1] = $DB7_BOOL_SIZE if $type eq 'L';
+        $self->{'vars'}->{$name}->[1] = $DB7_DATE_SIZE if $type eq 'D';
+        $self->{'vars'}->{$name}->[1] = $DB7_INT_SIZE if $type eq 'I';
+        $self->{'vars'}->{$name}->[1] = $s1 + ($s2 >> 8) if $type eq 'C';
+    }
+
+    close $dbf
+        or return $self->_e("Can not CLOSE \"$filename\": $ERRNO");
+}
+=cut
+
+# ------------------------------------------------------------------------------
 sub write_file {
     my ( $self, $filename ) = @_;
 
     return $self->{'error'} if $self->{'error'};
 
     $filename ||= $self->{'file'};    # 1.1 support
-
-    return $self->_e(
-        'No fields description given in ' . __PACKAGE__ . '::new()' )
-        if ( !$self->{'vars'} || !keys %{ $self->{'vars'} } );
 
     open my $dbf, '>:raw', $filename
         or return $self->_e("Can not OPEN \"$filename\": $ERRNO");
@@ -191,7 +237,7 @@ sub write_file {
             $self->{'vars'}->{$key}->[0],
             ( $self->{'vars'}->{$key}->[1] & $DB7_CHAR_MAX ),
             (   $self->{'vars'}->{$key}->[0] eq 'C'
-                ? ( ( $self->{'vars'}->{$key}->[1] << $DB7_CHAR_BITS )
+                ? ( ( $self->{'vars'}->{$key}->[1] >> $DB7_CHAR_BITS )
                     & $DB7_CHAR_MAX )
                 : 0
             ),
