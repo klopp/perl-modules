@@ -73,6 +73,9 @@ sub new {
     $self->{'error'}       = undef;
     $self->{'dirty'}       = undef;
 
+    $self->_e('file parameter missing!'), return $self
+        unless $self->{'file'};
+
     $self->{'language'} ||= $DB7_DEF_LANGUAGE;
 
     if (@vars) {
@@ -245,7 +248,7 @@ sub update_record {
                 unless $self->{'nocheck'};
             return $self->{'error'} if $self->{'error'};
         }
-        $rec->[ $_ ] = $value || '';
+        $rec->[$_] = $value || '';
         $self->{'dirty'} = 1;
     }
 
