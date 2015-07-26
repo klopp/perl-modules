@@ -22,7 +22,8 @@ const my $DB7_CHAR_LEN_MAX => 0xFF + ( 0xFF << 8 );
 const my $DB7_MONTH_MAX    => 12;
 const my $DB7_MDAY_MAX     => 31;
 const my $DB7_RECNAME_MAX  => 32;
-const my $DB7_RECORD_SIGN  => 32;                   # 32 - regular, 42 - deleted
+const my $DB7_REGULAR_REC  => 32;
+const my $DB7_DELETED_REC  => 42;
 const my $DB7_DATE_SIZE    => 8;
 const my $DB7_BOOL_SIZE    => 1;
 const my $DB7_INT_SIZE     => 4;
@@ -309,7 +310,7 @@ sub close_db {
 
     foreach my $record ( @{ $self->{'records'} } ) {
 
-        print {$dbf} pack( 'C', $DB7_RECORD_SIGN );
+        print {$dbf} pack( 'C', $DB7_REGULAR_REC );
 
         for ( 0 .. $#{$record} ) {
 
@@ -496,7 +497,10 @@ sub _read_file {
         my @rec = unpack $RECORD_TPL, $buf;
 
         my $sign = shift @rec;
-        next unless $sign == $DB7_RECORD_SIGN;
+        next if $sign == $DB7_DELETED_REC;
+        return $self->_e(
+            sprintf( 'Invalid record signature: "%X"', ord($buf) ) )
+            unless $sign == $DB7_REGULAR_REC;
 
         for ( 0 .. $#{ $self->{'vars'} } ) {
             $rec[$_] =~ s/^\s+// if $self->{'vars'}->[$_]->{'type'} eq 'F';
