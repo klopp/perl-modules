@@ -211,7 +211,6 @@ sub get_all_records {
     return scalar @{ $self->{'records'} } unless wantarray;
 
     my @data;
-
     foreach my $rec ( @{ $self->{'records'} } ) {
 
         my %rc;
@@ -238,15 +237,15 @@ sub update_record {
 
     my $rec = $self->{'records'}->[$idx];
 
-    foreach my $var ( @{ $self->{'vars'} } ) {
-        next unless exists $data->{ $var->{'name'} };
-        my $value = $data->{ $var->{'name'} };
+    for ( 0 .. $#{ $self->{'vars'} } ) {
+        next unless exists $data->{ $self->{'vars'}->[$_]->{'name'} };
+        my $value = $data->{ $self->{'vars'}->[$_]->{'name'} };
         if ($value) {
-            $self->_validate_value( $var, $value )
+            $self->_validate_value( $self->{'vars'}->[$_], $value )
                 unless $self->{'nocheck'};
             return $self->{'error'} if $self->{'error'};
         }
-        $rec->{ $var->[0] } = $value || '';
+        $rec->[ $_ ] = $value || '';
         $self->{'dirty'} = 1;
     }
 
