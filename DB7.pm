@@ -208,7 +208,18 @@ sub get_all_records {
 
     return if $self->{'error'};
 
-    return wantarray ? @{ $self->{records} } : scalar @{ $self->{'records'} };
+    return scalar @{ $self->{'records'} } unless wantarray;
+
+    my @data;
+
+    foreach my $rec ( @{ $self->{'records'} } ) {
+
+        my %rc;
+        $rc{ $self->{'vars'}->[$_]->{'name'} } = $rec->[$_]
+            for ( 0 .. $#{$rec} );
+        push @data, \%rc;
+    }
+    return \@data;
 }
 
 # ------------------------------------------------------------------------------
@@ -485,8 +496,7 @@ sub _read_file {
         my $sign = shift @rec;
         next unless $sign == $DB7_RECORD_SIGN;
 
-        for ( 0 .. $#{ $self->{'vars'} } )
-        {
+        for ( 0 .. $#{ $self->{'vars'} } ) {
             $rec[$_] =~ s/^\s+// if $self->{'vars'}->[$_]->{'type'} eq 'F';
             $rec[$_] =~ s/\s+$// if $self->{'vars'}->[$_]->{'type'} eq 'C';
         }
@@ -592,11 +602,9 @@ Delete record.
 
 Update record. Keys not present in I<$data> remain unchanged.
 
+=item $self->get_all_records()
+
 =item $self->get_record( I<$idx> )
-
-=item $self->first_record()
-
-=item $self->next_record()
 
 =item $self->write_file( I<$filename> )
 
