@@ -270,14 +270,6 @@ sub update_record {
 }
 
 # ------------------------------------------------------------------------------
-sub drop_db {
-    my ($self) = @_;
-    return $self->{'error'} if $self->{'error'};
-    $self->{'dirty'} = undef;
-    return;
-}
-
-# ------------------------------------------------------------------------------
 sub close_db {
     my ($self) = @_;
 
@@ -339,13 +331,8 @@ sub close_db {
     close $dbf
         or return $self->_e("Can not CLOSE \"$filename\": $ERRNO");
 
-    return $self->drop_db();
-}
-
-# ------------------------------------------------------------------------------
-sub DESTROY {
-    my ($self) = @_;
-    return $self->close_db();
+    $self->{'dirty'} = undef;
+    return $self->{'dirty'};
 }
 
 # ------------------------------------------------------------------------------
