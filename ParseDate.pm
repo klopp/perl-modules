@@ -59,28 +59,28 @@ sub _getMonth
             my ( $now, $data ) = @_;
 
             $now - ( 60 * 60 * 24 ) * $data->[0];
-          }
+            }
     ],
 
     '10' => [    # меньше минуты назад
         sub {
             my ( $now, $data ) = @_;
             floor( $now / 60 ) * 60;
-          }
+            }
     ],
 
     '15' => [    # 2 часа назад
         sub {
             my ( $now, $data ) = @_;
             $now - ( 60 * 60 * $data->[0] );
-          }
+            }
     ],
 
     '20' => [    # 10 минут назад
         sub {
             my ( $now, $data ) = @_;
             floor( ( $now - ( 60 * $data->[0] ) ) / 60 ) * 60;
-          }
+            }
     ],
 
     '30' => [    # сегодня 22:22
@@ -89,7 +89,7 @@ sub _getMonth
             my ( undef, undef, undef, $mday, $mon, $year ) = localtime( $now );
             my ( $hour, $min, $sec ) = split( /:/, $data->[0] );
             timelocal( $sec, $min, $hour, $mday, $mon, $year + 1900 );
-          }
+            }
     ],
 
     '40' => [    # вчера 22:22
@@ -105,7 +105,7 @@ sub _getMonth
             }
             my ( $hour, $min, $sec ) = split( /:/, $data->[0] );
             timelocal( $sec, $min, $hour, $mday, $mon, $year + 1900 );
-          }
+            }
     ],
 
     '50' => [    # 22.12.2004 12:13:14
@@ -115,7 +115,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[0], $data->[1] - 1,
                 $data->[2] );
-          }
+            }
     ],
 
     '55' => [    # 2004.12.22 12:13:14
@@ -125,7 +125,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[1], $data->[1] - 1,
                 $data->[0] );
-          }
+            }
     ],
 
     '60' => [    # 22-12-2004 12:13:14
@@ -135,7 +135,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[0], $data->[1] - 1,
                 $data->[2] );
-          }
+            }
     ],
 
     '65' => [    # 2004-12-22 12:13:14
@@ -145,7 +145,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[2], $data->[1] - 1,
                 $data->[0] );
-          }
+            }
     ],
 
     '70' => [    # 12:13:14 22.12.2004
@@ -155,7 +155,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[1], $data->[2] - 1,
                 $data->[3] );
-          }
+            }
     ],
 
     '80' => [    # 12:13:14 22-12-2004
@@ -165,7 +165,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[1], $data->[2] - 1,
                 $data->[3] );
-          }
+            }
     ],
 
     '90' => [    # 12 Apr 2004 12:13:14
@@ -175,7 +175,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[0], _getMonth( $data->[1] ),
                 $data->[2] );
-          }
+            }
     ],
 
     '100' => [    # Apr 12 2004 12:13:14
@@ -185,7 +185,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[1], _getMonth( $data->[0] ),
                 $data->[2] );
-          }
+            }
     ],
 
     '110' => [    # 12 Mar 22:22
@@ -196,7 +196,7 @@ sub _getMonth
             timelocal(
                 $sec, $min, $hour, $data->[0], _getMonth( $data->[1] ),
                 $year + 1900 );
-          }
+            }
     ],
 
     '120' => [    # 12 Mar 2004
@@ -205,7 +205,7 @@ sub _getMonth
             timelocal(
                 3, 2, 1, $data->[0], _getMonth( $data->[1] ),
                 $data->[2] );
-          }
+            }
     ],
 
     '130' => [    # 12.08.2004
@@ -214,7 +214,7 @@ sub _getMonth
             timelocal(
                 3, 2, 1, $data->[0], $data->[1] - 1,
                 $data->[2] );
-          }
+            }
     ],
 
     '140' => [    # 2004.08.22
@@ -223,7 +223,7 @@ sub _getMonth
             timelocal(
                 3, 2, 1, $data->[2], $data->[1] - 1,
                 $data->[0] );
-          }
+            }
     ],
 
     '150' => [    # 12-08-2004
@@ -232,7 +232,7 @@ sub _getMonth
             timelocal(
                 3, 2, 1, $data->[0], $data->[1] - 1,
                 $data->[2] );
-          }
+            }
     ],
 
     '160' => [    # 2004-08-22
@@ -241,7 +241,7 @@ sub _getMonth
             timelocal(
                 3, 2, 1, $data->[2], $data->[1] - 1,
                 $data->[0] );
-          }
+            }
     ],
 
 );
@@ -249,10 +249,7 @@ sub _getMonth
 # -------------------------------------------------------------------------
 sub parseDateInfo
 {
-	return 
-	{
-	   'cases' => scalar keys %MATCHES
-	};
+    return { 'cases' => scalar keys %MATCHES };
 }
 
 # -------------------------------------------------------------------------
@@ -267,19 +264,19 @@ sub parseDate
     unless( $MONTHRX )
     {
         $MONTHRX .= '('
-          . join( '|', sort { length $b <=> length $a } keys %nmonths ) . ')';
+            . join( '|', sort { length $b <=> length $a } keys %nmonths ) . ')';
 
         $MATCHES{5}->[1] =
-          qr/^(.*?)(\d+)\s+?(?:дн|дн\.|дня|дней)\s+?назад/oi;
+            qr/^(.*?)(\d+)\s+?(?:дн|дн\.|дня|дней)\s+?назад/oi;
 
         $MATCHES{10}->[1] =
-          qr/^(.*?)^меньше.+?минуты.+?назад/oi;
+            qr/^(.*?)^меньше.+?минуты.+?назад/oi;
 
         $MATCHES{15}->[1] =
-          qr/^(.*?)(\d+)\s+?(?:ч|ч\.|час|часа).+?назад/oi;
+            qr/^(.*?)(\d+)\s+?(?:ч|ч\.|час|часа).+?назад/oi;
 
         $MATCHES{20}->[1] =
-          qr/^(.*?)(\d+)\s+?(?:минут|мин|мин\.).+?назад/oi;
+            qr/^(.*?)(\d+)\s+?(?:минут|мин|мин\.).+?назад/oi;
         $MATCHES{30}->[1] = qr/^(.*?)сегодня.+?$TIMERX/oi;
         $MATCHES{40}->[1] = qr/^(.*?)вчера.+?$TIMERX/oi;
 
@@ -351,7 +348,7 @@ sub parseDate
         for( sort { $b <=> $a } keys %cases )
         {
             $best_case = $_, $best_offset = $cases{$_}[0]
-              if $cases{$_}[0] <= $best_offset;
+                if $cases{$_}[0] <= $best_offset;
         }
 
         my $data = $cases{$best_case};
@@ -381,7 +378,7 @@ sub parseDate
     'hrs'     => 60 * 60,
     'hour'    => 60 * 60,
     'hours'   => 60 * 60,
-    'min'  	  => 60,
+    'min'     => 60,
     'minute'  => 60,
     'minutes' => 60,
     'sec'     => 1,
@@ -399,7 +396,7 @@ sub string2Seconds
     {
         $seconds += $sseconds{$2} * $1 if $sseconds{$2};
     }
-    $seconds;
+    return $seconds;
 }
 
 # -------------------------------------------------------------------------
