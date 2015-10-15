@@ -21,29 +21,20 @@ $VERSION = '1.002';
 @EXPORT  = qw/$SXGEO_BATCH $SXGEO_MEM/;
 
 # ------------------------------------------------------------------------------
-const my @ID2ISO => (
-    '',   'AP', 'EU', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'CW', 'AO',
-    'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF',
-    'BG', 'BH', 'BI', 'BJ', 'BM', 'BN', 'BO', 'BR', 'BS', 'BT', 'BV', 'BW',
-    'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM',
-    'CN', 'CO', 'CR', 'CU', 'CV', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM',
-    'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK',
-    'FM', 'FO', 'FR', 'SX', 'GA', 'GB', 'GD', 'GE', 'GF', 'GH', 'GI', 'GL',
-    'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HM',
-    'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IN', 'IO', 'IQ', 'IR', 'IS',
-    'IT', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR',
-    'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU',
-    'LV', 'LY', 'MA', 'MC', 'MD', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO',
-    'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA',
-    'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM',
-    'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT',
-    'PW', 'PY', 'QA', 'RE', 'RO', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE',
-    'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'ST', 'SV',
-    'SY', 'SZ', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TM', 'TN', 'TO',
-    'TL', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'UM', 'US', 'UY', 'UZ',
-    'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'YE', 'YT', 'RS',
-    'ZA', 'ZM', 'ME', 'ZW', 'A1', 'XK', 'O1', 'AX', 'GG', 'IM', 'JE', 'BL',
-    'MF', 'BQ', 'SS',
+const my @ID2ISO => qw( AP EU AD AE AF AG AI AL AM CW AO AQ AR AS AT AU AW AZ 
+    BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BV BW BY BZ 
+    CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CX CY CZ 
+    DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR SX 
+    GA GB GD GE GF GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU 
+    ID IE IL IN IO IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KY KZ 
+    LA LB LC LI LK LR LS LT LU LV LY 
+    MA MC MD MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ 
+    NA NC NE NF NG NI NL NO NP NR NU NZ OM 
+    PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RU RW 
+    SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR ST SV SY SZ 
+    TC TD TF TG TH TJ TK TM TN TO TL TR TT TV TW TZ 
+    UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT RS 
+    ZA ZM ME ZW A1 XK O1 AX GG IM JE BL MF BQ SS
 );
 const my $HEADER_LENGTH => 40;
 const my $SXGEO_BATCH   => 1;
@@ -210,7 +201,7 @@ sub get {
     if ( !$self->{'max_city'} ) {
         %geodata = (
             'country_id'  => $seek,
-            'country_iso' => lc $ID2ISO[$seek],
+            'country_iso' => lc $ID2ISO[ $seek - 1 ],
         );
     }
     else {
@@ -222,7 +213,7 @@ sub get {
         %geodata = (
             'region_id'   => $data[0],
             'country_id'  => $data[1],
-            'country_iso' => lc $ID2ISO[ $data[1] ],
+            'country_iso' => lc $ID2ISO[ $data[1] - 1 ],
             'city_id'     => $data[2],
             'lat'         => $data[3],
             'lon'         => $data[4],
@@ -250,14 +241,14 @@ sub get_num {
     my $ip1n;
     $ip =~ /^(\d+)[.]/ and $ip1n = $1;
 
-    if( !$ip1n
+    if (  !$ip1n
         || $ip1n == 10
         || $ip1n == 127
         || $ip1n >= $self->{'b_idx_len'} )
-        {
-            $self->{'error'} = "Invalid IP: \"$ip\"";
-            return;
-        }
+    {
+        $self->{'error'} = "Invalid IP: \"$ip\"";
+        return;
+    }
     my $ipn = ip2long($ip);
     $ipn = pack( 'N', $ipn );
 
