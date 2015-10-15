@@ -196,6 +196,7 @@ sub error {
 sub get {
     my ( $self, $ip, @fields ) = @_;
 
+    undef $self->{'error'};
     if ( !is_ipv4($ip) ) {
         $self->{'error'} = "Invalid IP: \"$ip\"";
         return;
@@ -249,11 +250,14 @@ sub get_num {
     my $ip1n;
     $ip =~ /^(\d+)[.]/ and $ip1n = $1;
 
-    return
-           if !$ip1n
+    if( !$ip1n
         || $ip1n == 10
         || $ip1n == 127
-        || $ip1n >= $self->{'b_idx_len'};
+        || $ip1n >= $self->{'b_idx_len'} )
+        {
+            $self->{'error'} = "Invalid IP: \"$ip\"";
+            return;
+        }
     my $ipn = ip2long($ip);
     $ipn = pack( 'N', $ipn );
 
@@ -527,3 +531,99 @@ sub extended_unpack {
 1;
 
 __END__
+
+=head1 NAME
+
+SxGeo - L<Sypex Geo|https://sypexgeo.net/> databases parser
+
+=head1 VERSION
+
+Version 1.002
+
+=head1 SYNOPSIS
+
+    use SxGeo;
+
+    my $sxgeo = SxGeo->new( 'SxGeo.dat' );
+    my $geodata = $sxgeo->get( '93.191.14.81' ); 
+    
+=head1 DESCRIPTION
+
+This module parse L<Sypex Geo|http://sypexgeo.net/> databases and allow to get geo information for IP.
+
+=head1 SUBROUTINES/METHODS
+
+=encoding UTF-8
+
+=over
+
+=item new( F<$file> [, $flags] )
+
+Valid C<$flags> values: C<$SXGEO_BATCH> (for multiple C<get> requests), C<$SXGEO_MEM>.  
+
+=item get( I<$ip> [, @fields] )
+
+Return geodata or undef.
+
+    use Data::Printer;
+    my $geodata = $sxgeo->get( '93.191.14.81' );
+    p $geodata; 
+
+Output:
+
+    \ {
+        city_en       "Fryazino",
+        city_id       562319,
+        city_ru       "Фрязино",
+        country_id    185,
+        country_iso   "ru",
+        lat           55.96056,
+        lon           38.04556,
+        region_id     10267
+    }
+
+You can indicate fields to return:
+
+    my $geodata = $sxgeo->get( '93.191.14.81', 'city_en', 'lat', 'lon' );
+    p $geodata; 
+
+Output:
+
+    \ {
+        city_en       "Fryazino",
+        lat           55.96056,
+        lon           38.04556,
+    }
+
+For F<SxGeo.dat> only two field avaliable: C<country_id>, C<country_iso>.
+
+=item error
+
+Return internal error string. Example:
+
+    my $geodata = $sxgeo->get( '666.356.299.400' ); 
+    say $sxgeo->error unless $geodata;
+
+=back
+
+=head1 BUGS AND LIMITATIONS
+
+With C<$SXGEO_MEM> flag entire file will be loaded into memory!
+
+=head1 LICENSE AND COPYRIGHT
+
+Coyright (C) 2015 Vsevolod Lutovinov.
+
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself. The full text of this license can be found in
+the LICENSE file included with this module.
+
+=head1 AUTHOR
+
+Contact the author at klopp@yandex.ru.
+
+=head1 SOURCE CODE
+
+Source code and issues can be found here:
+ <https://github.com/klopp/sxgeo-perl>
+
