@@ -14,6 +14,7 @@ use Const::Fast;
 use Socket qw/inet_aton/;
 use Encode qw/encode_utf8 decode_utf8/;
 use Data::Validate::IP qw/is_ipv4/;
+use experimental qw/switch/;
 
 use vars qw/$VERSION @EXPORT/;
 $VERSION = '1.002';
@@ -187,9 +188,7 @@ sub new {
 sub error {
     my $self = shift;
     my $e    = $self->{'error'};
-    eval {
-        $e = decode_utf8($e) if $e;
-    };
+    eval { $e = decode_utf8($e) if $e; };
     return $e;
 }
 
@@ -197,8 +196,7 @@ sub error {
 sub get {
     my ( $self, $ip, @fields ) = @_;
 
-    if( !is_ipv4($ip) )
-    {
+    if ( !is_ipv4($ip) ) {
         $self->{'error'} = "Invalid IP: \"$ip\"";
         return;
     }
@@ -218,9 +216,7 @@ sub get {
         my @data = $self->parse_city($seek);
         return unless @data;
 
-        eval {
-            $data[5] = decode_utf8( $data[5] );
-        };
+        eval { $data[5] = decode_utf8( $data[5] ); };
 
         %geodata = (
             'region_id'   => $data[0],
@@ -254,7 +250,10 @@ sub get_num {
     $ip =~ /^(\d+)[.]/ and $ip1n = $1;
 
     return
-        if !$ip1n || $ip1n == 10 || $ip1n == 127 || $ip1n >= $self->{'b_idx_len'};
+           if !$ip1n
+        || $ip1n == 10
+        || $ip1n == 127
+        || $ip1n >= $self->{'b_idx_len'};
     my $ipn = ip2long($ip);
     $ipn = pack( 'N', $ipn );
 
@@ -296,7 +295,6 @@ sub get_num {
         $min = $blocks[0];
         $max = $blocks[1];
     }
-
 
     my $len = $max - $min;
     my $buf = $self->_read( $len * $self->{block_len},
@@ -428,87 +426,92 @@ sub extended_unpack {
 
         my $len;
 
-        if ( $flag eq 't' ) {
-        }
-        elsif ( $flag eq 'T' ) {
-            $len = 1;
-        }
-        elsif ( $flag eq 's' ) {
-        }
-        elsif ( $flag eq 'n' ) {
-            $len = $num;
-        }
-        elsif ( $flag eq 'S' ) {
-            $len = 2;
-        }
-        elsif ( $flag eq 'm' ) {
-        }
-        elsif ( $flag eq 'M' ) {
-            $len = 3;
-        }
-        elsif ( $flag eq 'd' ) {
-            $len = 8;
-        }
-        elsif ( $flag eq 'c' ) {
-            $len = $num;
-        }
-        elsif ( $flag eq 'b' ) {
-            $len = index( $val, "\0", $pos ) - $pos;
-        }
-        else {
-            $len = 4;
+        given ($flag) {
+            when ('t') {
+            }
+            when ('T') {
+                $len = 1;
+            }
+            when ('s') {
+            }
+            when ('n') {
+                $len = $num;
+            }
+            when ('S') {
+                $len = 2;
+            }
+            when ('m') {
+            }
+            when ('M') {
+                $len = 3;
+            }
+            when ('d') {
+                $len = 8;
+            }
+            when ('c') {
+                $len = $num;
+            }
+            when ('b') {
+                $len = index( $val, "\0", $pos ) - $pos;
+            }
+            default {
+                $len = 4;
+            }
         }
 
         my $subval = substr( $val, $pos, $len );
 
         my $res;
 
-        if ( $flag eq 't' ) {
-            $res = ( unpack 'c', $subval )[0];
-        }
-        elsif ( $flag eq 'T' ) {
-            $res = ( unpack 'C', $subval )[0];
-        }
-        elsif ( $flag eq 's' ) {
-            $res = ( unpack 's', $subval )[0];
-        }
-        elsif ( $flag eq 'S' ) {
-            $res = ( unpack 'S', $subval )[0];
-        }
-        elsif ( $flag eq 'm' ) {
-            $res = (
-                unpack 'l',
-                $subval
-                    . ( ord( substr( $subval, 2, 1 ) ) >> 7 ? "\xff" : "\0" )
-            )[0];
-        }
-        elsif ( $flag eq 'M' ) {
-            $res = ( unpack 'L', $subval . "\0" )[0];
-        }
-        elsif ( $flag eq 'i' ) {
-            $res = ( unpack 'l', $subval )[0];
-        }
-        elsif ( $flag eq 'I' ) {
-            $res = ( unpack 'L', $subval )[0];
-        }
-        elsif ( $flag eq 'f' ) {
-            $res = ( unpack 'f', $subval )[0];
-        }
-        elsif ( $flag eq 'd' ) {
-            $res = ( unpack 'd', $subval )[0];
-        }
-        elsif ( $flag eq 'n' ) {
-            $res = ( unpack 's', $subval )[0] / ( 10**$num );
-        }
-        elsif ( $flag eq 'N' ) {
-            $res = ( unpack 'l', $subval )[0] / ( 10**$num );
-        }
-        elsif ( $flag eq 'c' ) {
-            $res = rtrim $subval;
-        }
-        elsif ( $flag eq 'b' ) {
-            $res = $subval;
-            $len++;
+        given ($flag) {
+            when ('t') {
+                $res = ( unpack 'c', $subval )[0];
+            }
+            when ('T') {
+                $res = ( unpack 'C', $subval )[0];
+            }
+            when ('s') {
+                $res = ( unpack 's', $subval )[0];
+            }
+            when ('S') {
+                $res = ( unpack 'S', $subval )[0];
+            }
+            when ('m') {
+                $res = (
+                    unpack 'l',
+                    $subval
+                        . (
+                        ord( substr( $subval, 2, 1 ) ) >> 7 ? "\xff" : "\0" )
+                )[0];
+            }
+            when ('M') {
+                $res = ( unpack 'L', $subval . "\0" )[0];
+            }
+            when ('i') {
+                $res = ( unpack 'l', $subval )[0];
+            }
+            when ('I') {
+                $res = ( unpack 'L', $subval )[0];
+            }
+            when ('f') {
+                $res = ( unpack 'f', $subval )[0];
+            }
+            when ('d') {
+                $res = ( unpack 'd', $subval )[0];
+            }
+            when ('n') {
+                $res = ( unpack 's', $subval )[0] / ( 10**$num );
+            }
+            when ('N') {
+                $res = ( unpack 'l', $subval )[0] / ( 10**$num );
+            }
+            when ('c') {
+                $res = rtrim $subval;
+            }
+            when ('b') {
+                $res = $subval;
+                $len++;
+            }
         }
 
         $pos += $len;
