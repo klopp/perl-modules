@@ -5,7 +5,6 @@ package Log::Log4perl::Appender::Debugger;
 #  Author: Vsevolod Lutovinov <klopp@yandex.ru>
 # ------------------------------------------------------------------------------
 use utf8;
-use open qw/:std :utf8/;
 use Modern::Perl;
 use English qw/-no_match_vars/;
 
@@ -14,6 +13,7 @@ use Carp;
 use File::Basename;
 use Log::Any::Proxy;
 our @ISA = qw/Log::Log4perl::Appender/;
+our $VERSION   = '1.0';
 
 # ------------------------------------------------------------------------------
 sub new {
@@ -121,7 +121,7 @@ sub _set_dumper_options {
 
     eval "use Data::Printer $opt;";
 
-    Carp::croak("Invalid DumperOptions : $opt\n-$@-\n") if $@;
+    Carp::croak("Invalid DumperOptions : $opt\n$EVAL_ERROR\n") if $EVAL_ERROR;
 
     no warnings 'redefine';
     *Log::Any::Proxy::_default_formatter = sub {
