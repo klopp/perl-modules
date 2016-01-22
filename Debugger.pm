@@ -41,12 +41,12 @@ sub new {
     $self->{ExcludeFilesFromTrace}
         and $ExcludeFilesFromTrace = qr/$self->{ExcludeFilesFromTrace}/;
 
-    my $TraceLine = $self->{TraceLine} || '%s at %f, line %l';
-
     my $FileBasename = $self->{FileBasename};
+    my $TraceLine = $self->{TraceLine} || '%s at %f, line %l';
+    my $TraceCSpec = $self->{TraceCSpec} || 'Z';
 
     Log::Log4perl::Layout::PatternLayout::add_global_cspec(
-        'D',
+        $TraceCSpec,
         sub {
             my ( $depth, $tabs, $callers, @callers ) = ( 0, 1, q{} );
 
