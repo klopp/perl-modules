@@ -255,7 +255,7 @@ sub parseDateInfo
 # -------------------------------------------------------------------------
 sub parseDate
 {
-    my ( $d ) = @_;
+    my ( $d, $now ) = @_;
 
     my $s = $d;
     $s =~ s/^\s+|\s+$//gsm;
@@ -323,7 +323,7 @@ sub parseDate
         $MATCHES{160}->[1] = qr/^(.*?)(\d{4})\-(\d\d)\-$DATERX/oi;
     }
 
-    my $now = time();
+    $now ||= time();
     $s =~ s/yesterday/вчера/igsm;
     $s =~ s/today/сегодня/igsm;
 
