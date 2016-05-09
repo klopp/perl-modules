@@ -4,6 +4,8 @@ package ConfigParse;
 use Modern::Perl;
 use English qw/-no_match_vars/;
 
+use Data::Printer;
+
 # ------------------------------------------------------------------------------
 use Exporter;
 use base qw/Exporter/;
@@ -16,16 +18,20 @@ use constant DEF_SECTION => q{_};
 sub _parse_value {
 	my ($val, $replaces) = @_;
 
-	use Data::Printer;
-	p %{$replaces};
-
 	$val =~ s/^"|"$//gs;
-	if ($val =~ /^%(.+)%$/) {
-		$val = $ENV{$1};
+
+	while( $val =~ /(\@([^\@]+)\@)/sm )
+	{
+		my $replace = $replaces->{$2} || q{};
+		$val =~ s/$1/$replace/sm;
 	}
-	elsif ($val =~ /^\@(.+)\@$/) {
-		$val = $replaces->{$1}; # if exists $replaces->{$1};
+
+	while( $val =~ /(%([^%]+)%)/sm )
+	{
+		my $replace = $ENV{$2} || q{};
+		$val =~ s/$1/$replace/sm;
 	}
+
 	return $val;
 }
 
@@ -257,7 +263,9 @@ Use <I>/* and <I>*/ to separate lines for block comments;
     b = c	#
     [C]
     Path = %PATH%
-    Chemin = @C/Path@ # "C" section "Path" value 
+    
+    # Use "Path" from "C" section:
+    Chemin = "Utilisez le chemin \"@C/Path@\" pour ..." 
 
 =head1 DIAGNOSTICS
 
