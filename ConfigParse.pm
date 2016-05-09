@@ -10,16 +10,27 @@ use base qw/Exporter/;
 use vars qw/$VERSION $error @EXPORT_OK/;
 $VERSION   = '1.003';
 @EXPORT_OK = qw/parse_config_file parse_config_data/;
+use constant DEF_SECTION => q{_};
+
+# ------------------------------------------------------------------------------
+sub _parse_value {
+	my ($val) = @_;
+
+	$val =~ s/^"|"$//gs;
+	if ($val =~ /^%(.+)%$/) {
+		$val = $ENV{$1};
+	}
+	return $val;
+}
 
 # ------------------------------------------------------------------------------
 sub _parse {
-	my ($lines, $opt) = @_;
+	my ($lines, $opt, $ini, $replaces ) = @_;
 
 	my $current;
-	my $section = q{_};
+	my $section = DEF_SECTION;
 	my $lineno  = 0;
 	my $line;
-	my %ini;
 	my %multikey = map { $_ => 1 } @{ $opt->{'multikey'} };
 
 	$error = undef;
@@ -93,21 +104,26 @@ sub _parse {
 		if ($current =~ /\[(.+)\]/) {
 
 			$section = $opt->{'lowersections'} ? lc $1 : $1;
-			$ini{$section} ||= ();
+			$ini->{$section} ||= ();
 		}
 		elsif ($current =~ /^\s*([^=]+?)\s*=\s*(.*?)\s*$/s) {
 
 			my ($key, $val) = ($1, $2);
 			$key = lc $key if $opt->{'lowerkeys'};
-			$val =~ s/^"|"$//gs;
+			$val = _parse_value($val);
+
+			my $rkey = $section eq DEF_SECTION ? '' : "$section/";
+			$rkey .= $key;
 
 			if ($multikey{$key}) {
-				$ini{$section}{$key} = []
-					unless $ini{$section}{$key};
-				push @{ $ini{$section}{$key} }, $val;
+				$ini->{$section}{$key} = []
+					unless ref $ini->{$section}{$key} eq 'ARRAY';
+				push @{ $ini->{$section}{$key} }, $val;
+				$replaces->{$rkey} = join q{,}, @{ $ini->{$section}{$key} };
 			}
 			else {
-				$ini{$section}{$key} = $val;
+				$ini->{$section}{$key} = $val;
+				$replaces->{$rkey} = $val;
 			}
 
 		}
@@ -116,30 +132,11 @@ sub _parse {
 			return;
 		}
 	}
-	return %ini;
-}
 
-# ------------------------------------------------------------------------------
-sub _parse_env {
-	my ($ini) = @_;
+use Data::Printer;
+p %{$replaces};
 
-	foreach my $section (keys %{$ini}) {
-		foreach my $key (keys %{ $ini->{$section} }) {
 
-			if (ref $ini->{$section}{$key}) {
-
-				for (0 .. $#{ $ini->{$section}{$key} }) {
-					next
-						unless $ini->{$section}{$key}[$_] =~ /^%(.+)%$/;
-					$ini->{$section}{$key}[$_] = $ENV{$1};
-				}
-			}
-			else {
-				next unless $ini->{$section}{$key} =~ /^%(.+)%$/;
-				$ini->{$section}{$key} = $ENV{$1};
-			}
-		}
-	}
 	return wantarray ? %{$ini} : $ini;
 }
 
@@ -147,21 +144,31 @@ sub _parse_env {
 sub parse_config_data {
 	my ($input, %opt) = @_;
 
-	my %ini = _parse([ split /\n/, $input ], \%opt);
-	unless ($opt{'defaults'}) {
-		return _parse_env(\%ini);
+	my %ini;
+	my %replaces;
+
+	foreach my $section (keys %{ $opt{'defaults'} }) {
+		
+		my $rkey = $section eq DEF_SECTION ? '' : "$section/";
+
+		foreach my $key (keys %{ $opt{'defaults'}{$section} }) {
+
+			$rkey .= $key;
+
+			if (ref $opt{'defaults'}{$section}{$key}) {
+				my @val = map { _parse_value($_) } @{ $opt{'defaults'}{$section}{$key} }; 
+				$replaces{$rkey} = join q{,}, @val;
+				$ini{$section}{$key} = @val;
+			}
+			else {
+				my $val = _parse_value($opt{'defaults'}{$section}{$key});
+				$replaces{$rkey} = $val;
+				$ini{$section}{$key} = $val;
+			}
+		}
 	}
 
-	my %rc;
-
-	foreach my $key (keys %{ $opt{'defaults'} }) {
-		$rc{$key}{$_} = $opt{'defaults'}->{$key}->{$_}
-			for keys %{ $opt{'defaults'}->{$key} };
-	}
-	foreach my $key (keys %ini) {
-		$rc{$key}{$_} = $ini{$key}->{$_} for keys %{ $ini{$key} };
-	}
-	return _parse_env(\%rc);
+	return _parse([ split /\n/, $input ], \%opt, \%ini, \%replaces);
 }
 
 # ------------------------------------------------------------------------------
@@ -174,9 +181,11 @@ sub parse_config_file {
 		= $opt{'encoding'} ? '<:encoding(' . $opt{'encoding'} . ')' : '<';
 	$error = "Can not open file \"$filename\": $ERRNO", return
 		unless open(my $fh, $encoding, $filename);
+	my $RC = $INPUT_RECORD_SEPARATOR;
 	local $INPUT_RECORD_SEPARATOR = undef;
 	my $input = <$fh>;
 	close $fh;
+	$INPUT_RECORD_SEPARATOR = $RC;
 	return parse_config_data($input, %opt);
 }
 
@@ -272,7 +281,7 @@ without this key this config secection
 
 produces:
 
-    $data{'a'} => 'b'
+    $data{'a'} => 'd' # last value used
 
 With <I>multikey=>['a']
 
