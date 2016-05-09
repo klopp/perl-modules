@@ -5,12 +5,11 @@ use strict;
 use warnings;
 use Exporter;
 use base 'Exporter';
-use Const::Fast;
 
 # ------------------------------------------------------------------------------
 our $VERSION   = '1.0';
 our @EXPORT_OK = qw/argv getopt/;
-const my $DASH => q/-/;
+use constant DASH => q/-/;
 
 # ------------------------------------------------------------------------------
 sub getopt {
@@ -26,10 +25,10 @@ sub argv {
         my ($arg) = /^-(.+)$/o;
         $arg ||= $_;
 
-        $argv{$lastarg} = $DASH, undef $lastarg, next
-            if $_ eq $DASH && $lastarg;
+        $argv{$lastarg} = DASH, undef $lastarg, next
+            if $_ eq DASH && $lastarg;
 
-        next if $_ eq $DASH && !$lastarg;
+        next if $_ eq DASH && !$lastarg;
 
         if (/^-/o) {
             $lastarg = $arg;
