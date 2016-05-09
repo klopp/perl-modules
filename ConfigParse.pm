@@ -14,18 +14,24 @@ use constant DEF_SECTION => q{_};
 
 # ------------------------------------------------------------------------------
 sub _parse_value {
-	my ($val) = @_;
+	my ($val, $replaces) = @_;
+
+	use Data::Printer;
+	p %{$replaces};
 
 	$val =~ s/^"|"$//gs;
 	if ($val =~ /^%(.+)%$/) {
 		$val = $ENV{$1};
+	}
+	elsif ($val =~ /^\@(.+)\@$/) {
+		$val = $replaces->{$1}; # if exists $replaces->{$1};
 	}
 	return $val;
 }
 
 # ------------------------------------------------------------------------------
 sub _parse {
-	my ($lines, $opt, $ini, $replaces ) = @_;
+	my ($lines, $opt, $ini, $replaces) = @_;
 
 	my $current;
 	my $section = DEF_SECTION;
@@ -110,13 +116,13 @@ sub _parse {
 
 			my ($key, $val) = ($1, $2);
 			$key = lc $key if $opt->{'lowerkeys'};
-			$val = _parse_value($val);
+			$val = _parse_value($val, $replaces);
 
 			my $rkey = $section eq DEF_SECTION ? '' : "$section/";
 			$rkey .= $key;
 
 			if ($multikey{$key}) {
-				$ini->{$section}{$key} = []
+				$ini->{$section}{$key} = ()
 					unless ref $ini->{$section}{$key} eq 'ARRAY';
 				push @{ $ini->{$section}{$key} }, $val;
 				$replaces->{$rkey} = join q{,}, @{ $ini->{$section}{$key} };
@@ -133,10 +139,6 @@ sub _parse {
 		}
 	}
 
-use Data::Printer;
-p %{$replaces};
-
-
 	return wantarray ? %{$ini} : $ini;
 }
 
@@ -148,7 +150,7 @@ sub parse_config_data {
 	my %replaces;
 
 	foreach my $section (keys %{ $opt{'defaults'} }) {
-		
+
 		my $rkey = $section eq DEF_SECTION ? '' : "$section/";
 
 		foreach my $key (keys %{ $opt{'defaults'}{$section} }) {
@@ -156,12 +158,14 @@ sub parse_config_data {
 			$rkey .= $key;
 
 			if (ref $opt{'defaults'}{$section}{$key}) {
-				my @val = map { _parse_value($_) } @{ $opt{'defaults'}{$section}{$key} }; 
+				my @val = map { _parse_value($_, \%replaces) }
+					@{ $opt{'defaults'}{$section}{$key} };
 				$replaces{$rkey} = join q{,}, @val;
 				$ini{$section}{$key} = @val;
 			}
 			else {
-				my $val = _parse_value($opt{'defaults'}{$section}{$key});
+				my $val = _parse_value($opt{'defaults'}{$section}{$key},
+					\%replaces);
 				$replaces{$rkey} = $val;
 				$ini{$section}{$key} = $val;
 			}
@@ -220,6 +224,8 @@ Default section name is "_".
 
 Use Key = %VALUE% to substitute %VALUE% by environment content.
 
+Use Key = @VALUE@ to substitute @VALUE@ by value computed in the previous steps.
+
 Use "#" or ";" for comments.
 
 Use "\" on line end to continue on next line, or HEREDOC syntax for
@@ -230,15 +236,16 @@ Use <I>/* and <I>*/ to separate lines for block comments;
 =head1 EXAMPLE
 
     HereDocValue  <<< _HERE_;
-     Here
-     Doc
-     Value
+       Here
+         Doc
+          Value
     _HERE_;
 
     /*
       Block
         comment
     */
+    
     MultiLineValue = multiline \
      value
     QuotedValue = " quoted value "
@@ -250,6 +257,7 @@ Use <I>/* and <I>*/ to separate lines for block comments;
     b = c	#
     [C]
     Path = %PATH%
+    Chemin = @C/Path@ # "C" section "Path" value 
 
 =head1 DIAGNOSTICS
 
