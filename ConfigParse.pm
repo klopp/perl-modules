@@ -3,7 +3,7 @@ package ConfigParse;
 # ------------------------------------------------------------------------------
 use Modern::Perl;
 use English qw/-no_match_vars/;
-
+use Const::Fast;
 use Data::Printer;
 
 # ------------------------------------------------------------------------------
@@ -12,22 +12,16 @@ use base qw/Exporter/;
 use vars qw/$VERSION $error @EXPORT_OK/;
 $VERSION   = '1.003';
 @EXPORT_OK = qw/parse_config_file parse_config_data/;
-use constant DEF_SECTION => q{_};
+const my $DEF_SECTION  => q{_};
+const my $LINE_COMMENT => qr/[;#]/;
 
 # ------------------------------------------------------------------------------
 sub _parse_value {
-	my ($val, $replaces) = @_;
+	my ($val) = @_;
 
 	$val =~ s/^"|"$//gs;
 
-	while( $val =~ /(\@([^\@]+)\@)/sm )
-	{
-		my $replace = $replaces->{$2} || q{};
-		$val =~ s/$1/$replace/sm;
-	}
-
-	while( $val =~ /(%([^%]+)%)/sm )
-	{
+	while ($val =~ /(%([^%]+)%)/sm) {
 		my $replace = $ENV{$2} || q{};
 		$val =~ s/$1/$replace/sm;
 	}
@@ -37,10 +31,10 @@ sub _parse_value {
 
 # ------------------------------------------------------------------------------
 sub _parse {
-	my ($lines, $opt, $ini, $replaces) = @_;
+	my ($lines, $opt, $ini) = @_;
 
 	my $current;
-	my $section = DEF_SECTION;
+	my $section = $DEF_SECTION;
 	my $lineno  = 0;
 	my $line;
 	my %multikey = map { $_ => 1 } @{ $opt->{'multikey'} };
@@ -52,7 +46,7 @@ sub _parse {
 		$lineno++;
 		$current =~ s/^\s+|\s+$//gs;
 
-		next if !$current || $current =~ /^[;#]/;
+		next if !$current || $current =~ /^$LINE_COMMENT/;
 
 		if ($current eq q{/*}) {
 			$cmt++;
@@ -106,7 +100,7 @@ sub _parse {
 			elsif ($c eq q{"}) {
 				$inquote ^= 1;
 			}
-			elsif ($c =~ /[;#]/) {
+			elsif ($c =~ /$LINE_COMMENT/) {
 				last unless $inquote;
 			}
 			$current .= $c;
@@ -122,20 +116,15 @@ sub _parse {
 
 			my ($key, $val) = ($1, $2);
 			$key = lc $key if $opt->{'lowerkeys'};
-			$val = _parse_value($val, $replaces);
-
-			my $rkey = $section eq DEF_SECTION ? '' : "$section/";
-			$rkey .= $key;
+			$val = _parse_value($val);
 
 			if ($multikey{$key}) {
 				$ini->{$section}{$key} = ()
 					unless ref $ini->{$section}{$key} eq 'ARRAY';
 				push @{ $ini->{$section}{$key} }, $val;
-				$replaces->{$rkey} = join q{,}, @{ $ini->{$section}{$key} };
 			}
 			else {
 				$ini->{$section}{$key} = $val;
-				$replaces->{$rkey} = $val;
 			}
 
 		}
@@ -153,32 +142,23 @@ sub parse_config_data {
 	my ($input, %opt) = @_;
 
 	my %ini;
-	my %replaces;
 
 	foreach my $section (keys %{ $opt{'defaults'} }) {
 
-		my $rkey = $section eq DEF_SECTION ? '' : "$section/";
-
 		foreach my $key (keys %{ $opt{'defaults'}{$section} }) {
 
-			$rkey .= $key;
-
 			if (ref $opt{'defaults'}{$section}{$key}) {
-				my @val = map { _parse_value($_, \%replaces) }
+				$ini{$section}{$key} = map { _parse_value($_) }
 					@{ $opt{'defaults'}{$section}{$key} };
-				$replaces{$rkey} = join q{,}, @val;
-				$ini{$section}{$key} = @val;
 			}
 			else {
-				my $val = _parse_value($opt{'defaults'}{$section}{$key},
-					\%replaces);
-				$replaces{$rkey} = $val;
-				$ini{$section}{$key} = $val;
+				$ini{$section}{$key}
+					= _parse_value($opt{'defaults'}{$section}{$key});
 			}
 		}
 	}
 
-	return _parse([ split /\n/, $input ], \%opt, \%ini, \%replaces);
+	return _parse([ split /\n/, $input ], \%opt, \%ini);
 }
 
 # ------------------------------------------------------------------------------
@@ -230,8 +210,6 @@ Default section name is "_".
 
 Use Key = %VALUE% to substitute %VALUE% by environment content.
 
-Use Key = @VALUE@ to substitute @VALUE@ by value computed in the previous steps.
-
 Use "#" or ";" for comments.
 
 Use "\" on line end to continue on next line, or HEREDOC syntax for
@@ -251,21 +229,18 @@ Use <I>/* and <I>*/ to separate lines for block comments;
       Block
         comment
     */
-    
+
     MultiLineValue = multiline \
      value
-    QuotedValue = " quoted value "
+    QuotedValue = " quoted value with \"quotes\" "
 
     [A]
     a = a 	; comment
     [B]
     b = b	# see "multikey" option
-    b = c	#
+    b = c
     [C]
-    Path = %PATH%
-    
-    # Use "Path" from "C" section:
-    Chemin = "Utilisez le chemin \"@C/Path@\" pour ..." 
+    Path = %PATH% # read PATH from environment
 
 =head1 DIAGNOSTICS
 
@@ -286,7 +261,7 @@ Valid options are:
 
 <B>lowerkeys     : convert key names to lower.
 
-<B>defaults      : default values; common (default) section is "_".
+<B>defaults      : default values; common (default) section "_".
 
 <B>multikey      : key names to create multi-values array. For example,
 without this key this config secection
