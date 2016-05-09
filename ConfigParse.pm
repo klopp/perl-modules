@@ -286,7 +286,7 @@ Valid options are:
 
 <B>lowerkeys     : convert key names to lower.
 
-<B>defaults      : default values.
+<B>defaults      : default values; common (default) section is "_".
 
 <B>multikey      : key names to create multi-values array. For example,
 without this key this config secection
