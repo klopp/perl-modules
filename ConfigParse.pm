@@ -1,0 +1,1 @@
+/home/klopp/projects/mycpm-daemon-perl/MyConfig.pm
