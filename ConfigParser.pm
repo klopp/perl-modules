@@ -4,7 +4,6 @@ package ConfigParser;
 use Modern::Perl;
 use English qw/-no_match_vars/;
 use Const::Fast;
-use Data::Printer;
 
 # ------------------------------------------------------------------------------
 use Exporter;
