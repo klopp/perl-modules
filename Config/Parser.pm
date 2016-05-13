@@ -6,13 +6,13 @@ use English qw/-no_match_vars/;
 use Const::Fast;
 
 # ------------------------------------------------------------------------------
-use Exporter;
-use base qw/Exporter/;
-use vars qw/$VERSION $error @EXPORT_OK/;
+use Exporter qw/import/;
+use vars qw/$VERSION/;
 $VERSION   = '1.003';
-@EXPORT_OK = qw/parse_config_file parse_config_data/;
+our @EXPORT_OK = qw/parse_config_file parse_config_data config_ok config_error/;
 const my $DEF_SECTION  => q{_};
 const my $LINE_COMMENT => qr/[;#]/;
+my $error;
 
 # ------------------------------------------------------------------------------
 sub _parse_value {
@@ -137,6 +137,18 @@ sub _parse {
 }
 
 # ------------------------------------------------------------------------------
+sub  config_ok 
+{
+	return !$error; 
+}
+
+# ------------------------------------------------------------------------------
+sub config_error
+{
+	return $error || q{}; 
+}
+
+# ------------------------------------------------------------------------------
 sub parse_config_data {
 	my ($input, %opt) = @_;
 
@@ -170,12 +182,10 @@ sub parse_config_file {
 		= $opt{'encoding'} ? '<:encoding(' . $opt{'encoding'} . ')' : '<';
 	$error = "Can not open file \"$filename\": $ERRNO", return
 		unless open( my $fh, $encoding, $filename );
-		
-	my $RC = $INPUT_RECORD_SEPARATOR;
+
 	local $INPUT_RECORD_SEPARATOR = undef;
 	my $input = <$fh>;
 	close $fh;
-	$INPUT_RECORD_SEPARATOR = $RC;
 	return parse_config_data($input, %opt);
 }
 
@@ -188,7 +198,7 @@ __END__
 
 =head1 NAME
 
-ConfigParser
+Config::Parser
 
 =head1 VERSION
 
@@ -282,6 +292,14 @@ produces:
 With <I>multikey=>['a']
 
     $data{'a'} => [ 'b', 'c', 'd' ]
+
+=config_ok()
+
+Return true if no config errors.
+
+=config_error()
+
+Return error message or ''.
 
 =back
 
