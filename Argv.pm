@@ -115,7 +115,7 @@ the LICENSE file included with this module.
 
 =head1 AUTHOR
 
-Contact the author at klopp@yandex.ru.
+Contact the author at klopp@yandex.ru
 
 =head1 SOURCE CODE
 
