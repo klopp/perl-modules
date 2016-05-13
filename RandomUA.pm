@@ -1,10 +1,12 @@
 package RandomUA;
-use Exporter;
-use vars qw(@uas @EXPORT);
-use base Exporter;
-@EXPORT = qw(get_random_ua get_ua_list_ref);
+
 # ---------------------------------------------------------------------
-@uas = ();
+use Modern::Perl;
+use Exporter qw/import/;
+our @EXPORT_OK = qw/get_random_ua get_ua_list_ref/;
+
+# ---------------------------------------------------------------------
+my @uas = ();
 
 # ---------------------------------------------------------------------
 sub get_random_ua
