@@ -2,13 +2,12 @@ package Argv;
 
 # ------------------------------------------------------------------------------
 use Modern::Perl;
-use warnings;
-use Exporter;
-use base 'Exporter';
+use Exporter qw/import/;
+use vars qw/$VERSION/;
+$VERSION   = '1.002';
+our @EXPORT_OK = qw/argv getopt/;
 
 # ------------------------------------------------------------------------------
-our $VERSION   = '1.0';
-our @EXPORT_OK = qw/argv getopt/;
 use constant DASH => q/-/;
 
 # ------------------------------------------------------------------------------
@@ -58,7 +57,7 @@ Argv - very-very-very simple command line parser.
 
 =head1 VERSION
 
-Version 1.0
+Version 1.002
 
 =head1 SYNOPSIS
 
