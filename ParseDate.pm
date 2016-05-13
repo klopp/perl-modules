@@ -1,20 +1,19 @@
 package ParseDate;
 
-# ---------------------------------------------------------------------
-use Exporter;
-use vars qw(%sseconds %nmonths $MONTHRX $DATERX $TIMERX %MATCHES $RX00);
-@ISA    = qw(Exporter);
-@EXPORT = qw(parseDate string2Seconds parseDateInfo);
+use Modern::Perl;
+use Exporter qw/import/;
+use vars qw($VERSION %SSECONDS %NMONTHS $MONTHRX $DATERX $TIMERX %MATCHES $RX00);
+$VERSION   = '1.003';
+our @EXPORT_OK = qw/parseDate string2Seconds parseDateInfo/;
 
 # -------------------------------------------------------------------------
-use strict;
 use utf8;
 use Date::Manip;
 use Time::Local;
 use POSIX qw(floor);
 
 # -------------------------------------------------------------------------
-%nmonths = (
+%NMONTHS = (
     'янв'         => 0, 'фев'         => 1,   'мар'           => 2,
     'апр'         => 3, 'май'         => 4,   'июн'           => 5,
     'июл'         => 6, 'авг'         => 7,   'сен'           => 8,
@@ -48,7 +47,7 @@ sub _getMonth
 {
     my ( $m ) = @_;
     $m = lc $m;
-    return $nmonths{$m} ? $nmonths{$m} : $m;
+    return $NMONTHS{$m} || $m;
 }
 
 # -------------------------------------------------------------------------
@@ -264,7 +263,7 @@ sub parseDate
     unless( $MONTHRX )
     {
         $MONTHRX .= '('
-            . join( '|', sort { length $b <=> length $a } keys %nmonths ) . ')';
+            . join( '|', sort { length $b <=> length $a } keys %NMONTHS ) . ')';
 
         $MATCHES{5}->[1] =
             qr/^(.*?)(\d+)\s+?(?:дн|дн\.|дня|дней)\s+?назад/oi;
@@ -370,7 +369,7 @@ sub parseDate
 }
 
 # -------------------------------------------------------------------------
-%sseconds = (
+%SSECONDS = (
     'week'    => 60 * 60 * 24 * 7,
     'weeks'   => 60 * 60 * 24 * 7,
     'day'     => 60 * 60 * 24,
@@ -394,7 +393,7 @@ sub string2Seconds
     my $seconds = 0;
     while( $s =~ /(\d+)[\s,;]+(\w+)/gsm )
     {
-        $seconds += $sseconds{$2} * $1 if $sseconds{$2};
+        $seconds += $SSECONDS{$2} * $1 if $SSECONDS{$2};
     }
     return $seconds;
 }
