@@ -1,4 +1,4 @@
-##ConfigParser.pm
+##Config::Parser.pm
 
 - Lightweight config files parser with some features.
 
