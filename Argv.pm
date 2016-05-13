@@ -1,7 +1,7 @@
 package Argv;
 
 # ------------------------------------------------------------------------------
-use strict;
+use Modern::Perl;
 use warnings;
 use Exporter;
 use base 'Exporter';
