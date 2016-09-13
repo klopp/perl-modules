@@ -322,7 +322,7 @@ Invalid block comments examples:
 
 =head1 LICENSE AND COPYRIGHT
 
-Coyright (C) 2016 Vsevolod Lutovinov.
+Copyright (C) 2016 Vsevolod Lutovinov.
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself. The full text of this license can be found in
