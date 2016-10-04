@@ -2,7 +2,6 @@ package FileProcess;
 
 # ------------------------------------------------------------------------------
 use Modern::Perl;
-use Modern::Perl;
 use File::Temp qw/tempfile/;
 use File::Copy qw/move/;
 use Carp qw/croak/;
