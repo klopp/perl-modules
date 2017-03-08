@@ -13,34 +13,37 @@ $VERSION = '1.001';
 our @EXPORT_OK = qw/processFile/;
 
 # ------------------------------------------------------------------------------
-sub processFile {
+sub processFile
+{
     # --------------------------------------------------------------------------
     #
     # options:
     #   infile ("-" => stdin)
     #   outfile ("-" => stdout)
     #   callback( $in_handle, $in_name, $temp_handle, $temp_name, $out_name )
-    #   bak 
-    #   tempdir 
-    #   template 
-    #   suffix 
+    #   bak
+    #   tempdir
+    #   template
+    #   suffix
     # return undef (success) or error message
     # --------------------------------------------------------------------------
     my (%opt) = @_;
 
-    return "infile parameter required"  unless $opt{'infile'};
-    return "outfile parameter required" unless $opt{'outfile'};
+    return "infile parameter required"   unless $opt{'infile'};
+    return "outfile parameter required"  unless $opt{'outfile'};
     return "callback parameter required" unless $opt{'callback'};
 
     my ( $inh, $outh, $outt, $tempdir, $template, $suffix );
 
-    $template = $opt{'template'} || __PACKAGE__.'_XXXX';
+    $template = $opt{'template'} || __PACKAGE__ . '_XXXX';
     $suffix   = $opt{'suffix'}   || '.$$$';
 
     $tempdir = $opt{'tempdir'};
     $tempdir = $ENV{'TEMP'} unless $tempdir;
     $tempdir = $ENV{'TMP'} unless $tempdir;
     $tempdir ||= '.';
+
+    say "[$opt{'infile'}]";
 
     if ( $opt{'infile'} eq '-' ) {
         $inh = \*STDIN;
@@ -53,11 +56,14 @@ sub processFile {
         $outh = \*STDOUT;
     }
     else {
-        eval { ( $outh, $outt ) = tempfile( $template, DIR => $tempdir, SUFFIX => $suffix, UNLINK => 1); };
+        eval { ( $outh, $outt ) = tempfile( $template, DIR => $tempdir, SUFFIX => $suffix, UNLINK => 1 ); };
         return @! if @!;
     }
 
-    my $rc = $opt{'callback'}->($inh, $opt{'infile'}, $outh, $outt, $opt{'outname'} );
+    my $rc = $opt{'callback'}->( $inh, $opt{'infile'}, $outh, $outt, $opt{'outfile'} );
+
+    say ">>[$opt{'outfile'}]";
+
     return $rc if $rc;
 
     close $inh if $opt{'infile'} ne '-';
