@@ -7,7 +7,7 @@ use Data::Printer;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
-$VERSION = '1.001';
+$VERSION = '1.002';
 
 # -----------------------------------------------------------------------------
 my $params = {
@@ -34,9 +34,10 @@ sub import
 # -----------------------------------------------------------------------------
 sub _xe
 {
-    my $msg = shift;
-    confess "$msg:\n" . np(@_) if $params->{errors} eq 'stop';
-    cluck "$msg:\n" . np(@_) if $params->{errors} eq 'warn';
+    my $msg = shift . ':';
+    $msg .= ( @_ ? "\n" . np(@_) : '' );
+    confess $msg if $params->{errors} eq 'stop';
+    cluck $msg   if $params->{errors} eq 'warn';
     return;
 }
 
@@ -51,13 +52,34 @@ sub _xh
 }
 
 # -----------------------------------------------------------------------------
+# Check key type. Trigger error if type is invalid. 
+# Set values from key if type is HASH
+# -----------------------------------------------------------------------------
+sub _set_value
+{
+    my ( $rc, $data, $i ) = @_;
+    
+    my $ref = ref $data->[$i];
+    if ($ref) {
+        if ( $ref eq 'HASH' ) {
+            _xe('Arguments after HASH defaults are disabled') if exists $data->[$i+1];
+            return _xh( $rc, $data->[$i] );
+        }
+        _xe("Key can not be $ref type");
+    }
+    _xe( 'Odd HASH elements passed') unless exists $data->[ $i + 1 ];
+    $rc->{ $data->[$i] } //= $data->[ $i + 1 ];
+    return;
+}
+
+# -----------------------------------------------------------------------------
 # Set undefined values in $rc from @defaults
 # -----------------------------------------------------------------------------
 sub _xha
 {
     my ( $rc, $defaults ) = @_;
     for ( my $i = 0; $i < @{$defaults}; $i += 2 ) {
-        $rc->{ $defaults->[$i] } //= $defaults->[ $i + 1 ];
+        last if _set_value( $rc, $defaults, $i );
     }
     return %{$rc};
 }
@@ -71,7 +93,7 @@ sub _xa
     my %rc;
 
     for ( my $i = 0; $i < @{$args}; $i += 2 ) {
-        $rc{ $args->[$i] } //= $args->[ $i + 1 ];
+        last if _set_value( \%rc, $args, $i );
     }
     return %rc;
 }
@@ -86,7 +108,7 @@ sub xa
             if ( ref $_[0] eq 'HASH' ) {
                 if ( exists $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xe( 'Only 2 method arguments allowed', @_ )
+                        _xe( 'Arguments after HASH defaults are disabled', @_ )
                             if exists $_[2];
                         return ( $self, _xh( $_[0], $_[1] ) );
                     }
@@ -94,7 +116,6 @@ sub xa
                     return ( $self, _xha( $arg, \@_ ) );
                 }
             }
-            _xe( 'Odd HASH elements passed to method', @_ ) if @_ % 2;
             return ( $self, _xa( \@_ ) );
         }
     }
@@ -103,17 +124,15 @@ sub xa
 
         unless ( ref $self eq 'HASH' ) {
             unshift @_, $self;
-            _xe( 'Odd HASH elements passed to function', @_ ) if @_ % 2;
             return _xa( \@_ );
         }
 
         if ( exists $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
-                _xe( 'Only 2 function arguments allowed', @_ ) if exists $_[1];
+                _xe( 'Arguments after HASH defaults are disabled', @_ ) if exists $_[1];
                 return _xh( $self, $_[0] );
             }
             else {
-                _xe( 'Odd HASH elements passed to function', @_ ) if @_ % 2;
                 return _xha( $self, \@_ );
             }
         }
@@ -132,7 +151,7 @@ Xa - named function/method arguments extractor with default values.
 
 =head1 VERSION
 
-Version 1.001
+Version 1.002
 
 =head1 SYNOPSIS
 
