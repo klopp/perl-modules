@@ -1,5 +1,6 @@
 package Xa;
 
+# -----------------------------------------------------------------------------
 use strict;
 use warnings;
 use Data::Printer;
@@ -9,9 +10,11 @@ use Carp qw/confess/;
 # -----------------------------------------------------------------------------
 sub import 
 {
+    my ( $class, $name ) = @_;
     my $caller = caller;
+    my $imported = $name || 'xa';
     no strict 'refs';
-    *{"$caller\::xa"} = \&xa;
+    *{"$caller\::$imported"} = \&xa;
 }
  
 # -----------------------------------------------------------------------------
@@ -98,7 +101,69 @@ sub xa
 }
 
 # -----------------------------------------------------------------------------
-# That's All, Folks!
-# -----------------------------------------------------------------------------
 1;
+
+__END__
+
+=head1 NAME
+
+Xa - named function/method arguments extractor.
+
+=head1 VERSION
+
+Version 1.002
+
+=head1 SYNOPSIS
+
+    use Xa;
+    sub aaa 
+    {
+        my %arg = xa @_;
+        OR
+        my %arg = xa @_, default_a => 'a', default_b => 'b'; 
+    }
+
+    use Xa 'xxx';
+    sub aaa 
+    {
+        my %arg = xxx @_;
+        OR
+        my %arg = xxx @_, default_a => 'a', default_b => 'b'; 
+    }
+
+=head1 DESCRIPTION
+
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item xa( I<@_> [, defaults ] )
+
+
+
+=back
+
+=head1 BUGS AND LIMITATIONS
+
+
+=head1 INCOMPATIBILITIES
+
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (C) 2015 Vsevolod Lutovinov.
+
+This program is free software; you can redistribute it and/or modify it under 
+the same terms as Perl itself. The full text of this license can be found in 
+the LICENSE file included with this module.
+
+=head1 AUTHOR
+
+Contact the author at klopp@yandex.ru
+
+=head1 SOURCE CODE
+
+Source code and issues can be found here:
+ <https://github.com/klopp/perl-modules>
 
