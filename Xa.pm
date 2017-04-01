@@ -5,34 +5,39 @@ use strict;
 use warnings;
 use Data::Printer;
 use Scalar::Util qw/blessed/;
-use Carp qw/confess/;
+use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
 $VERSION = '1.001';
 
 # -----------------------------------------------------------------------------
 my $params = {
     'name'   => 'xa',
-    'errors' => 'strong',
+    'errors' => 'stop',
 };
 
 # -----------------------------------------------------------------------------
 sub import
 {
-    my $class = shift;
-    $params = @_ == 1 ? shift : {@_} if @_;
-    confess __PACKAGE__ . ' can receive HASH or HASH reference only'
-        unless ref $params eq 'HASH';
+    my ( $class, $args ) = ( shift, {} );
+    $args = @_ == 1 ? shift : {@_} if @_;
+    confess __PACKAGE__ . " can receive HASH or HASH reference only, but got:\n" . np($args)
+        unless ref $args eq 'HASH';
+    $params->{$_} = $args->{$_} for keys %{$args};
+    confess "Invalid \"errors\" value (stop|warn|pass):\n" . np( $params->{errors} )
+        if defined $params->{errors} && $params->{errors} !~ /^stop|warn|pass$/;
+    confess 'No "name" value' unless defined $params->{name};
     my $caller = caller;
-    my $imported = $params->{name} || 'xa';
     no strict 'refs';
-    *{"$caller\::$imported"} = \&xa;
+    *{"$caller\::$params->{name}"} = \&xa;
 }
 
 # -----------------------------------------------------------------------------
 sub _xe
 {
     my $msg = shift;
-    return confess "$msg:\n" . np(@_);
+    confess "$msg:\n" . np(@_) if $params->{errors} eq 'stop';
+    cluck "$msg:\n" . np(@_) if $params->{errors} eq 'warn';
+    return;
 }
 
 # -----------------------------------------------------------------------------
