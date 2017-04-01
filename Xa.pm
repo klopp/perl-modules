@@ -80,9 +80,8 @@ sub _xa
 sub xa
 {
     my $self = shift;
-    return () unless defined $self;
 
-    if ( blessed $self ) {
+    if ( defined $self && blessed $self ) {
         if ( defined $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
                 if ( exists $_[1] ) {
@@ -100,6 +99,7 @@ sub xa
         }
     }
     else {
+        return () unless defined $self;
 
         unless ( ref $self eq 'HASH' ) {
             unshift @_, $self;
@@ -107,10 +107,10 @@ sub xa
             return _xa( \@_ );
         }
 
-        if ( exists $_[1] ) {
-            if ( ref $_[1] eq 'HASH' ) {
-                _xe( 'Only 2 function arguments allowed', @_ ) if exists $_[2];
-                return _xh( $_[0], $_[1] );
+        if ( exists $_[0] ) {
+            if ( ref $_[0] eq 'HASH' ) {
+                _xe( 'Only 2 function arguments allowed', @_ ) if exists $_[1];
+                return _xh( $self, $_[0] );
             }
             else {
                 _xe( 'Odd HASH elements passed to function', @_ ) if @_ % 2;
@@ -118,7 +118,7 @@ sub xa
             }
         }
     }
-    return wantarray ? ( $self, undef ) : $self;
+    return %{$self};
 }
 
 # -----------------------------------------------------------------------------
