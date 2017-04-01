@@ -67,40 +67,40 @@ sub _xa
 sub xa
 {
     my $self = shift;
+    return () unless defined $self;
 
-    if ( defined $self && blessed $self ) {
+    if ( blessed $self ) {
         if ( defined $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
-                if ( defined $_[1] ) {
+                if ( exists $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xe( 'Only 2 arguments for $self allowed!', @_ )
-                            if defined $_[2];
+                        _xe( 'Only 2 arguments for $self allowed', @_ )
+                            if exists $_[2];
                         return ( $self, _xh( $_[0], $_[1] ) );
                     }
                     my $arg = shift;
                     return ( $self, _xha( $arg, \@_ ) );
                 }
             }
-            _xe( 'Odd HASH elements passed with $self!', @_ ) if @_ % 2;
+            _xe( 'Odd HASH elements passed with $self', @_ ) if @_ % 2;
             return ( $self, _xa( \@_ ) );
         }
     }
     else {
-        return () unless defined $self;
 
         unless ( ref $self eq 'HASH' ) {
             unshift @_, $self;
-            _xe( 'Odd HASH elements passed!', @_ ) if @_ % 2;
+            _xe( 'Odd HASH elements passed', @_ ) if @_ % 2;
             return _xa( \@_ );
         }
 
-        if ( defined $_[1] ) {
+        if ( exists $_[1] ) {
             if ( ref $_[1] eq 'HASH' ) {
-                _xe( 'Only 2 arguments allowed!', @_ ) if defined $_[2];
+                _xe( 'Only 2 arguments allowed', @_ ) if exists $_[2];
                 return _xh( $_[0], $_[1] );
             }
             else {
-                _xe( 'Odd HASH elements passed!', @_ ) if @_ % 2;
+                _xe( 'Odd HASH elements passed', @_ ) if @_ % 2;
                 return _xha( $self, \@_ );
             }
         }
@@ -119,7 +119,7 @@ Xa - named function/method arguments extractor with default values.
 
 =head1 VERSION
 
-Version 1.002
+Version 1.001
 
 =head1 SYNOPSIS
 
