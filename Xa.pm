@@ -73,7 +73,7 @@ sub xa
             if ( ref $_[0] eq 'HASH' ) {
                 if ( exists $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xe( 'Only 2 arguments for $self allowed', @_ )
+                        _xe( 'Only 2 method arguments allowed', @_ )
                             if exists $_[2];
                         return ( $self, _xh( $_[0], $_[1] ) );
                     }
@@ -81,7 +81,7 @@ sub xa
                     return ( $self, _xha( $arg, \@_ ) );
                 }
             }
-            _xe( 'Odd HASH elements passed with $self', @_ ) if @_ % 2;
+            _xe( 'Odd HASH elements passed to method', @_ ) if @_ % 2;
             return ( $self, _xa( \@_ ) );
         }
     }
@@ -89,17 +89,17 @@ sub xa
 
         unless ( ref $self eq 'HASH' ) {
             unshift @_, $self;
-            _xe( 'Odd HASH elements passed', @_ ) if @_ % 2;
+            _xe( 'Odd HASH elements passed to function', @_ ) if @_ % 2;
             return _xa( \@_ );
         }
 
         if ( exists $_[1] ) {
             if ( ref $_[1] eq 'HASH' ) {
-                _xe( 'Only 2 arguments allowed', @_ ) if exists $_[2];
+                _xe( 'Only 2 function arguments allowed', @_ ) if exists $_[2];
                 return _xh( $_[0], $_[1] );
             }
             else {
-                _xe( 'Odd HASH elements passed', @_ ) if @_ % 2;
+                _xe( 'Odd HASH elements passed to function', @_ ) if @_ % 2;
                 return _xha( $self, \@_ );
             }
         }
