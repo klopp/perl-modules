@@ -7,14 +7,23 @@ use Data::Printer;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess/;
 use vars qw/$VERSION/;
-$VERSION   = '1.001';
+$VERSION = '1.001';
+
+# -----------------------------------------------------------------------------
+my $params = {
+    'name'   => 'xa',
+    'errors' => 'strong',
+};
 
 # -----------------------------------------------------------------------------
 sub import
 {
-    my ( $class, $name ) = @_;
+    my $class = shift;
+    $params = @_ == 1 ? shift : {@_} if @_;
+    confess __PACKAGE__ . ' can receive HASH or HASH reference only'
+        unless ref $params eq 'HASH';
     my $caller = caller;
-    my $imported = $name || 'xa';
+    my $imported = $params->{name} || 'xa';
     no strict 'refs';
     *{"$caller\::$imported"} = \&xa;
 }
@@ -23,7 +32,7 @@ sub import
 sub _xe
 {
     my $msg = shift;
-    return confess "$msg:\n".np(@_);
+    return confess "$msg:\n" . np(@_);
 }
 
 # -----------------------------------------------------------------------------
