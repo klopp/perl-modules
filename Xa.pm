@@ -107,7 +107,7 @@ __END__
 
 =head1 NAME
 
-Xa - named function/method arguments extractor.
+Xa - named function/method arguments extractor with default values.
 
 =head1 VERSION
 
@@ -130,6 +130,16 @@ Version 1.002
         OR
         my %arg = xxx @_, default_a => 'a', default_b => 'b'; 
     }
+    aaa( a => 1, b => 2 );
+    
+    use Xa;
+    # for blessed method
+    sub aaa 
+    {
+        my ( $self, %arg ) = xa @_;
+    }
+    $obj->aaa( a => 1, b => 2 );
+   
 
 =head1 DESCRIPTION
 
@@ -140,19 +150,19 @@ Version 1.002
 
 =item xa( I<@_> [, defaults ] )
 
-
-
 =back
 
 =head1 BUGS AND LIMITATIONS
 
+Unknown.
 
 =head1 INCOMPATIBILITIES
 
+Unknown.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2015 Vsevolod Lutovinov.
+Copyright (C) 2017 Vsevolod Lutovinov.
 
 This program is free software; you can redistribute it and/or modify it under 
 the same terms as Perl itself. The full text of this license can be found in 
