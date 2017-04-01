@@ -6,9 +6,11 @@ use warnings;
 use Data::Printer;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess/;
+use vars qw/$VERSION/;
+$VERSION   = '1.001';
 
 # -----------------------------------------------------------------------------
-sub import 
+sub import
 {
     my ( $class, $name ) = @_;
     my $caller = caller;
@@ -16,7 +18,7 @@ sub import
     no strict 'refs';
     *{"$caller\::$imported"} = \&xa;
 }
- 
+
 # -----------------------------------------------------------------------------
 sub _xe
 {
@@ -26,6 +28,8 @@ sub _xe
 }
 
 # -----------------------------------------------------------------------------
+# Set undefined values in $rc from %defaults
+# -----------------------------------------------------------------------------
 sub _xh
 {
     my ( $rc, $defaults ) = @_;
@@ -33,6 +37,8 @@ sub _xh
     return %{$rc};
 }
 
+# -----------------------------------------------------------------------------
+# Set undefined values in $rc from @defaults
 # -----------------------------------------------------------------------------
 sub _xha
 {
@@ -43,6 +49,8 @@ sub _xha
     return %{$rc};
 }
 
+# -----------------------------------------------------------------------------
+# Extract values from @args without redefinition
 # -----------------------------------------------------------------------------
 sub _xa
 {
@@ -65,7 +73,7 @@ sub xa
             if ( ref $_[0] eq 'HASH' ) {
                 if ( defined $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xe( 'Only 2 arguments for $self allowed!', \@_ )
+                        _xe( 'Only 2 arguments for $self allowed!', @_ )
                             if defined $_[2];
                         return ( $self, _xh( $_[0], $_[1] ) );
                     }
@@ -73,7 +81,7 @@ sub xa
                     return ( $self, _xha( $arg, \@_ ) );
                 }
             }
-            _xe( 'Odd HASH elements passed with $self!', \@_ ) if @_ % 2;
+            _xe( 'Odd HASH elements passed with $self!', @_ ) if @_ % 2;
             return ( $self, _xa( \@_ ) );
         }
     }
@@ -82,17 +90,17 @@ sub xa
 
         unless ( ref $self eq 'HASH' ) {
             unshift @_, $self;
-            _xe( 'Odd HASH elements passed!', \@_ ) if @_ % 2;
+            _xe( 'Odd HASH elements passed!', @_ ) if @_ % 2;
             return _xa( \@_ );
         }
 
         if ( defined $_[1] ) {
             if ( ref $_[1] eq 'HASH' ) {
-                _xe( 'Only 2 arguments allowed!', \@_ ) if defined $_[2];
+                _xe( 'Only 2 arguments allowed!', @_ ) if defined $_[2];
                 return _xh( $_[0], $_[1] );
             }
             else {
-                _xe( 'Odd HASH elements passed!', \@_ ) if @_ % 2;
+                _xe( 'Odd HASH elements passed!', @_ ) if @_ % 2;
                 return _xha( $self, \@_ );
             }
         }
