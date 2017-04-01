@@ -23,8 +23,7 @@ sub import
 sub _xe
 {
     my $msg = shift;
-    p @_;
-    return confess $msg;
+    return confess "$msg:\n".np(@_);
 }
 
 # -----------------------------------------------------------------------------
@@ -129,14 +128,8 @@ Version 1.001
         my %arg = xa @_;
         OR
         my %arg = xa @_, default_a => 'a', default_b => 'b'; 
-    }
-
-    use Xa 'xxx';
-    sub aaa 
-    {
-        my %arg = xxx @_;
         OR
-        my %arg = xxx @_, default_a => 'a', default_b => 'b'; 
+        my %arg = xa @_, $defaults; 
     }
     aaa( a => 1, b => 2 );
     
