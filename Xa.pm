@@ -47,7 +47,7 @@ sub _xa_error
 }
 
 # -----------------------------------------------------------------------------
-# Set undefined values in $rc from %defaults
+# Set unexisting values in $rc from %defaults
 # -----------------------------------------------------------------------------
 sub _xa_defaults_from_hash
 {
@@ -85,7 +85,7 @@ sub _xa_set_value
 }
 
 # -----------------------------------------------------------------------------
-# Set undefined values in $rc from @defaults
+# Set unexisting values in $rc from @defaults
 # -----------------------------------------------------------------------------
 sub _xa_defaults_from_array
 {
@@ -176,7 +176,6 @@ Version 1.003
     aaa( a => 1, b => 2 );
     
     use Xa;
-    # for blessed method
     sub aaa 
     {
         my ( $self, %arg ) = xa @_;
