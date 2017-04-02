@@ -25,7 +25,7 @@ sub import
     $args = @_ == 1 ? shift : {@_} if @_;
 
     confess __PACKAGE__
-        . " can receive HASH or HASH reference only, but got:\n"
+        . ' can receive HASH or HASH reference only, but got: '
         . np($args)
         unless ref $args eq 'HASH';
     $p->{$_} = $args->{$_} for keys %{$args};
@@ -34,11 +34,11 @@ sub import
         . np( $p->{errors} )
         if defined $p->{errors} && !exists $EP{ $p->{errors} };
     confess 'No "alias" value' unless defined $p->{alias};
-    confess "Wrong \"alias\" value $AP\n" . np( $p->{alias} )
+    confess "Wrong \"alias\" value $AP: " . np( $p->{alias} )
         unless $p->{alias} =~ $AP;
     my $caller = caller;
     no strict 'refs';
-    *{"$caller\::$p->{alias}"} = \&xa;
+    *{"$caller::$p->{alias}"} = \&xa;
 }
 
 # -----------------------------------------------------------------------------
