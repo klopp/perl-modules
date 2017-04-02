@@ -24,10 +24,14 @@ sub import
     my ( $class, $args ) = ( shift, {} );
     $args = @_ == 1 ? shift : {@_} if @_;
 
-    confess __PACKAGE__ . " can receive HASH or HASH reference only, but got:\n" . np($args)
+    confess __PACKAGE__
+        . " can receive HASH or HASH reference only, but got:\n"
+        . np($args)
         unless ref $args eq 'HASH';
     $p->{$_} = $args->{$_} for keys %{$args};
-    confess 'Wrong "errors" value ' . join( q{|}, keys %EP ) . q{:} . np( $p->{errors} )
+    confess 'Wrong "errors" value '
+        . join( q{|}, keys %EP ) . q{:}
+        . np( $p->{errors} )
         if defined $p->{errors} && !exists $EP{ $p->{errors} };
     confess 'No "alias" value' unless defined $p->{alias};
     confess "Wrong \"alias\" value $AP\n" . np( $p->{alias} )
@@ -122,9 +126,11 @@ sub xa
             if ( ref $_[0] eq 'HASH' ) {
                 if ( exists $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xa_error( 'Arguments after HASH defaults are disabled', @_ )
+                        _xa_error(
+                            'Arguments after HASH defaults are disabled', @_ )
                             if exists $_[2];
-                        return ( $self, _xa_defaults_from_hash( $_[0], $_[1] ) );
+                        return ( $self,
+                            _xa_defaults_from_hash( $_[0], $_[1] ) );
                     }
                     my $arg = shift;
                     return ( $self, _xa_defaults_from_array( $arg, \@_ ) );
