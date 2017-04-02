@@ -158,6 +158,9 @@ sub xa
         }
     }
     else {
+
+p @_;
+
         return () unless defined $self;
 
         if ( ref $self ne 'HASH' ) {
