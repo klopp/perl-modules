@@ -3,12 +3,12 @@ package Xa;
 # -----------------------------------------------------------------------------
 use strict;
 use warnings;
+use Readonly;
 use Data::Printer;
-use Scalar::Util qw/blessed/;
+use Scalar::Util qw/blessed reftype/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
 $VERSION = '1.004';
-use Readonly;
 Readonly::Scalar my $AP => qr/\A[^\W\d]\w*\z/;
 Readonly::Hash my %EP => map { $_ => 1 } qw/stop warn pass quiet/;
 
@@ -17,7 +17,6 @@ my $p = {
     alias      => 'xa',
     errors     => 'stop',
     undefined  => undef,
-    check_keys => undef,
 };
 
 # -----------------------------------------------------------------------------
@@ -50,25 +49,11 @@ sub _xa_error
 }
 
 # -----------------------------------------------------------------------------
-# Check result kesy if configured
-# -----------------------------------------------------------------------------
-sub _xa_check_keys
-{
-    my ($rc) = @_;
-    for ( keys %{$rc} ) {
-        my $ref = ref $_;
-        $rc->{$_} = _xa_error("Data key can not be $ref type") if $ref;
-    }
-}
-
-# -----------------------------------------------------------------------------
 # Set unexisting values in $rc from %defaults
 # -----------------------------------------------------------------------------
 sub _xa_defaults_from_hash
 {
     my ( $rc, $defaults ) = @_;
-
-    _xa_check_keys($rc) if $p->{check_keys};
 
     for ( keys %{$defaults} ) {
         next if exists $rc->{$_};
@@ -122,8 +107,6 @@ sub _xa_set_value_from_array
 sub _xa_defaults_from_array
 {
     my ( $rc, $defaults ) = @_;
-
-    _xa_check_keys($rc) if $p->{check_keys};
 
     for ( my $i = 0; $i < @{$defaults}; $i += 2 ) {
         last if defined _xa_set_value_from_array( $rc, $defaults, $i );
@@ -249,8 +232,6 @@ WIP
         errors    => 'stop'
         # set undefined keys to (undef):
         undefined => ''
-        # check data key types:
-        check_keys => undef
 
 =head1 DIAGNOSTICS
 
