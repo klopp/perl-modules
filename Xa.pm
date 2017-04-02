@@ -233,7 +233,7 @@ WIP
         alias     =>  'my_extract_arguments',  
         # errors handling (stop|warn|pass|quiet, quiet == pass):
         errors    => 'stop'
-        # set undefined keys to (undef):
+        # set undefined keys to (default: undef):
         undefined => ''
 
 =head1 DIAGNOSTICS
