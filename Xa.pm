@@ -14,9 +14,10 @@ Readonly::Hash my %EP => map { $_ => 1 } qw/stop warn pass quiet/;
 
 # -----------------------------------------------------------------------------
 my $p = {
-    alias     => 'xa',
-    errors    => 'stop',
-    undefined => undef,
+    alias      => 'xa',
+    errors     => 'stop',
+    undefined  => undef,
+    keys_check => undef,
 };
 
 # -----------------------------------------------------------------------------
@@ -49,24 +50,40 @@ sub _xa_error
 }
 
 # -----------------------------------------------------------------------------
+# Check result kesy if configured
+# -----------------------------------------------------------------------------
+sub _xa_check_keys
+{
+    my ($rc) = @_;
+    for ( keys %{$rc} ) {
+        my $ref = ref $_;
+        $rc->{$_} = _xa_error("Key can not be $ref type") if $ref;
+    }
+}
+
+# -----------------------------------------------------------------------------
 # Set unexisting values in $rc from %defaults
 # -----------------------------------------------------------------------------
 sub _xa_defaults_from_hash
 {
     my ( $rc, $defaults ) = @_;
+
+    _xa_check_keys($rc) if $p->{check_keys};
+
     for ( keys %{$defaults} ) {
         next if exists $rc->{$_};
         my $ref = ref $defaults->{$_};
         _xa_error("Key can not be $ref type") if $ref;
         $rc->{$_} = $defaults->{$_};
     }
-    return _set_undefined($rc);
+    return _xa_finalize_data($rc);
 }
 
 # -----------------------------------------------------------------------------
-sub _set_undefined
+sub _xa_finalize_data
 {
     my ($rc) = @_;
+
     if ( defined $p->{undefined} ) {
         for ( keys %{$rc} ) {
             $rc->{$_} = $p->{undefined} unless defined $rc->{$_};
@@ -79,7 +96,7 @@ sub _set_undefined
 # Check key type. Show error if type is invalid.
 # Set values from key if type is HASH.
 # -----------------------------------------------------------------------------
-sub _xa_set_value
+sub _xa_set_value_from_array
 {
     my ( $rc, $data, $i ) = @_;
 
@@ -105,10 +122,13 @@ sub _xa_set_value
 sub _xa_defaults_from_array
 {
     my ( $rc, $defaults ) = @_;
+
+    _xa_check_keys($rc) if $p->{check_keys};
+
     for ( my $i = 0; $i < @{$defaults}; $i += 2 ) {
-        last if defined _xa_set_value( $rc, $defaults, $i );
+        last if defined _xa_set_value_from_array( $rc, $defaults, $i );
     }
-    return _set_undefined($rc);
+    return _xa_finalize_data($rc);
 }
 
 # -----------------------------------------------------------------------------
@@ -120,9 +140,9 @@ sub _xa_data_from_array
     my %rc;
 
     for ( my $i = 0; $i < @{$args}; $i += 2 ) {
-        last if defined _xa_set_value( \%rc, $args, $i );
+        last if defined _xa_set_value_from_array( \%rc, $args, $i );
     }
-    return _set_undefined( \%rc );
+    return _xa_finalize_data( \%rc );
 }
 
 # -----------------------------------------------------------------------------
@@ -131,11 +151,19 @@ sub xa
     my $self = shift;
 
     if ( defined $self && blessed $self ) {
+
+        my ( $pkg, $isa ) = ( (caller)[0], ref $self );
+        if ( $pkg ne $isa ) {
+            $p->{errors} = 'stop';
+            _xa_error( "Method of package '$pkg' called for invalid object type: '$isa'",
+                ( $self, @_ ) );
+        }
+
         if ( defined $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
                 if ( exists $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xa_error( 'Arguments after HASH defaults are disabled', @_ )
+                        _xa_error( 'Arguments after HASH defaults are disabled', ( $self, @_ ) )
                             if exists $_[2];
                         return ( $self, _xa_defaults_from_hash( $_[0], $_[1] ) );
                     }
@@ -156,7 +184,7 @@ sub xa
 
         if ( exists $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
-                _xa_error( 'Arguments after HASH defaults are disabled', @_ )
+                _xa_error( 'Arguments after HASH defaults are disabled', ( $self, @_ ) )
                     if exists $_[1];
                 return _xa_defaults_from_hash( $self, $_[0] );
             }
