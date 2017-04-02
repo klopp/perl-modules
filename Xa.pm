@@ -47,12 +47,12 @@ sub _xe
 sub _xh
 {
     my ( $rc, $defaults ) = @_;
-    for( keys %{$defaults} )
-    {
+    for ( keys %{$defaults} ) {
+        next if exists $rc->{$_}; 
         my $ref = ref $defaults->{$_};
         _xe("Key can not be $ref type") if $ref;
-        $rc->{$_} //= $defaults->{$_};
-    }        
+        $rc->{$_} = $defaults->{$_};
+    }
     return %{$rc};
 }
 
@@ -64,6 +64,8 @@ sub _set_value
 {
     my ( $rc, $data, $i ) = @_;
 
+    return if exists $rc->{ $data->[$i] };
+
     my $ref = ref $data->[$i];
     if ($ref) {
         if ( $ref eq 'HASH' ) {
@@ -73,7 +75,7 @@ sub _set_value
         _xe("Key can not be $ref type");
     }
     _xe('Odd HASH elements passed') unless exists $data->[ $i + 1 ];
-    $rc->{ $data->[$i] } //= $data->[ $i + 1 ];
+    $rc->{ $data->[$i] } = $data->[ $i + 1 ];
     return;
 }
 
@@ -84,7 +86,7 @@ sub _xha
 {
     my ( $rc, $defaults ) = @_;
     for ( my $i = 0; $i < @{$defaults}; $i += 2 ) {
-        last if _set_value( $rc, $defaults, $i );
+        last if defined _set_value( $rc, $defaults, $i );
     }
     return %{$rc};
 }
@@ -98,7 +100,7 @@ sub _xa
     my %rc;
 
     for ( my $i = 0; $i < @{$args}; $i += 2 ) {
-        last if _set_value( \%rc, $args, $i );
+        last if defined _set_value( \%rc, $args, $i );
     }
     return %rc;
 }
