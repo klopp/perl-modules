@@ -1,8 +1,7 @@
 package Xa;
 
 # -----------------------------------------------------------------------------
-use strict;
-use warnings;
+use Modern::Perl;
 use Data::Printer;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess cluck/;
