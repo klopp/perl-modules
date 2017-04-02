@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Readonly;
 use Data::Printer;
-use Scalar::Util qw/blessed reftype/;
+use Scalar::Util qw/blessed/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
 $VERSION = '1.004';
@@ -28,7 +28,7 @@ sub import
     confess __PACKAGE__ . ' can receive HASH or HASH reference only, but got: ' . np($args)
         unless ref $args eq 'HASH';
     $p->{$_} = $args->{$_} for keys %{$args};
-    confess 'Wrong "errors" value ' . join( q{|}, keys %EP ) . q{:} . np( $p->{errors} )
+    confess 'Wrong "errors" value (' . join( q{|}, keys %EP ) . q{):} . np( $p->{errors} )
         if defined $p->{errors} && !exists $EP{ $p->{errors} };
     confess 'No "alias" value' unless defined $p->{alias};
     confess "Wrong \"alias\" value $AP: " . np( $p->{alias} )
@@ -58,7 +58,7 @@ sub _xa_defaults_from_hash
     for ( keys %{$defaults} ) {
         next if exists $rc->{$_};
         my $ref = ref $defaults->{$_};
-        _xa_error("Defaults key can not be $ref type") if $ref;
+        _xa_error("Defaults key can not be '$ref' type") if $ref;
         $rc->{$_} = $defaults->{$_};
     }
     return _xa_finalize_data($rc);
@@ -94,7 +94,7 @@ sub _xa_set_value_from_array
                 if exists $data->[ $i + 1 ];
             return _xa_defaults_from_hash( $rc, $data->[$i] );
         }
-        _xa_error("Key can not be $ref type");
+        _xa_error("Key can not be '$ref' type");
     }
     _xa_error('Odd HASH elements passed') unless exists $data->[ $i + 1 ];
     $rc->{ $data->[$i] } = $data->[ $i + 1 ];
@@ -138,7 +138,7 @@ sub xa
         my ( $pkg, $isa ) = ( (caller)[0], ref $self );
         if ( $pkg ne $isa ) {
             $p->{errors} = 'stop';
-            _xa_error( "Method of package '$pkg' called for invalid object type: '$isa'",
+            _xa_error( "Method of package '$pkg' called for invalid object type '$isa'",
                 ( $self, @_ ) );
         }
 
@@ -235,11 +235,39 @@ WIP
 
 =head1 DIAGNOSTICS
 
-WIP
+=head2 Import diagnostics
+
+=over
+
+=item MODULE can receive HASH or HASH reference only, but got: ...
+
+=item Wrong "errors" value (stop|warn|pass|quiet): ...
+
+=item No "alias" value
+
+=item Wrong "alias" value ...
+
+=back
+
+=head2 Runtime diagnostics
+
+=over
+
+=item Method of package 'FOO' called for invalid object type 'BAR'
+
+=item Arguments after HASH defaults are disabled
+
+=item Key can not be 'FOO' type
+
+=item Defaults key can not be 'FOO' type
+
+=item Odd HASH elements passed
+
+=back
 
 =head1 DEPENDENCIES
 
-    Readonly, Data::Printer, Scalar::Util, Carp  
+Readonly, Data::Printer, Scalar::Util, Carp  
 
 =head1 BUGS AND LIMITATIONS
 
