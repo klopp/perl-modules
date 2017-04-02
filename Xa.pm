@@ -32,7 +32,7 @@ sub import
 }
 
 # -----------------------------------------------------------------------------
-sub _xe
+sub _xa_error
 {
     my $msg = shift . ':';
     $msg .= ( @_ ? "\n" . np(@_) : '' );
@@ -44,13 +44,13 @@ sub _xe
 # -----------------------------------------------------------------------------
 # Set undefined values in $rc from %defaults
 # -----------------------------------------------------------------------------
-sub _xh
+sub _xa_defaults_from_hash
 {
     my ( $rc, $defaults ) = @_;
     for ( keys %{$defaults} ) {
         next if exists $rc->{$_}; 
         my $ref = ref $defaults->{$_};
-        _xe("Key can not be $ref type") if $ref;
+        _xa_error("Key can not be $ref type") if $ref;
         $rc->{$_} = $defaults->{$_};
     }
     return %{$rc};
@@ -60,7 +60,7 @@ sub _xh
 # Check key type. Show error if type is invalid.
 # Set values from key if type is HASH.
 # -----------------------------------------------------------------------------
-sub _set_value
+sub _xa_set_value
 {
     my ( $rc, $data, $i ) = @_;
 
@@ -69,12 +69,12 @@ sub _set_value
     my $ref = ref $data->[$i];
     if ($ref) {
         if ( $ref eq 'HASH' ) {
-            _xe('Arguments after HASH defaults are disabled') if exists $data->[ $i + 1 ];
-            return _xh( $rc, $data->[$i] );
+            _xa_error('Arguments after HASH defaults are disabled') if exists $data->[ $i + 1 ];
+            return _xa_defaults_from_hash( $rc, $data->[$i] );
         }
-        _xe("Key can not be $ref type");
+        _xa_error("Key can not be $ref type");
     }
-    _xe('Odd HASH elements passed') unless exists $data->[ $i + 1 ];
+    _xa_error('Odd HASH elements passed') unless exists $data->[ $i + 1 ];
     $rc->{ $data->[$i] } = $data->[ $i + 1 ];
     return;
 }
@@ -82,11 +82,11 @@ sub _set_value
 # -----------------------------------------------------------------------------
 # Set undefined values in $rc from @defaults
 # -----------------------------------------------------------------------------
-sub _xha
+sub _xa_defaults_from_array
 {
     my ( $rc, $defaults ) = @_;
     for ( my $i = 0; $i < @{$defaults}; $i += 2 ) {
-        last if defined _set_value( $rc, $defaults, $i );
+        last if defined _xa_set_value( $rc, $defaults, $i );
     }
     return %{$rc};
 }
@@ -94,13 +94,13 @@ sub _xha
 # -----------------------------------------------------------------------------
 # Extract values from @args without redefinition
 # -----------------------------------------------------------------------------
-sub _xa
+sub _xa_data_from_array
 {
     my ($args) = @_;
     my %rc;
 
     for ( my $i = 0; $i < @{$args}; $i += 2 ) {
-        last if defined _set_value( \%rc, $args, $i );
+        last if defined _xa_set_value( \%rc, $args, $i );
     }
     return %rc;
 }
@@ -115,15 +115,15 @@ sub xa
             if ( ref $_[0] eq 'HASH' ) {
                 if ( exists $_[1] ) {
                     if ( ref $_[1] eq 'HASH' ) {
-                        _xe( 'Arguments after HASH defaults are disabled', @_ )
+                        _xa_error( 'Arguments after HASH defaults are disabled', @_ )
                             if exists $_[2];
-                        return ( $self, _xh( $_[0], $_[1] ) );
+                        return ( $self, _xa_defaults_from_hash( $_[0], $_[1] ) );
                     }
                     my $arg = shift;
-                    return ( $self, _xha( $arg, \@_ ) );
+                    return ( $self, _xa_defaults_from_array( $arg, \@_ ) );
                 }
             }
-            return ( $self, _xa( \@_ ) );
+            return ( $self, _xa_data_from_array( \@_ ) );
         }
     }
     else {
@@ -131,17 +131,17 @@ sub xa
 
         unless ( ref $self eq 'HASH' ) {
             unshift @_, $self;
-            return _xa( \@_ );
+            return _xa_data_from_array( \@_ );
         }
 
         if ( exists $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
-                _xe( 'Arguments after HASH defaults are disabled', @_ ) if exists $_[1];
-                return _xh( $self, $_[0] );
+                _xa_error( 'Arguments after HASH defaults are disabled', @_ ) if exists $_[1];
+                return _xa_defaults_from_hash( $self, $_[0] );
             }
         }
     }
-    return _xha( $self, \@_ );
+    return _xa_defaults_from_array( $self, \@_ );
 }
 
 # -----------------------------------------------------------------------------
