@@ -181,22 +181,25 @@ Version 1.004
 =head1 SYNOPSIS
 
     use Xa;
-    sub aaa 
+    sub foo 
     {
         my %arg = xa @_;
         OR
         my %arg = xa @_, default_a => 'a', default_b => 'b'; 
         OR
-        my %arg = xa @_, $defaults; 
+        my %arg = xa @_, $defaults_hash_or_array_ref; 
+        OR
+        my %arg = xa @_, $defaults_hash_or_array_ref; 
     }
-    aaa( a => 1, b => 2 );
+    foo( a => 1, b => 2 );
+    foo( $hash_ref, default_c => 3 );
     
-    use Xa;
-    sub aaa 
+    use Xa alias => 'xxx';
+    sub bar
     {
-        my ( $self, %arg ) = xa @_;
+        my ( $self, %arg ) = xxx @_;
     }
-    $obj->aaa( a => 1, b => 2 );
+    $foo->bar( a => 1, b => 2 );
    
 
 =head1 DESCRIPTION
@@ -207,7 +210,7 @@ WIP
 
 =over
 
-=item xa( I<@_> [, defaults ] )
+=item xa( I<arguments> [, I<defaults> ] )
 
 =back
 
@@ -227,7 +230,7 @@ WIP
 
 =head1 DEPENDENCIES
 
-    Readonly, Data::Printer, Scalar::Util, Carp, vars  
+    Readonly, Data::Printer, Scalar::Util, Carp  
 
 =head1 BUGS AND LIMITATIONS
 
