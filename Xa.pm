@@ -11,7 +11,7 @@ $VERSION = '1.002';
 
 # -----------------------------------------------------------------------------
 my $params = {
-    'name'   => 'xa',
+    'alias'  => 'xa',
     'errors' => 'stop',
 };
 
@@ -23,12 +23,12 @@ sub import
     confess __PACKAGE__ . " can receive HASH or HASH reference only, but got:\n" . np($args)
         unless ref $args eq 'HASH';
     $params->{$_} = $args->{$_} for keys %{$args};
-    confess "Invalid \"errors\" value (stop|warn|pass):\n" . np( $params->{errors} )
-        if defined $params->{errors} && $params->{errors} !~ /^stop|warn|pass$/;
-    confess 'No "name" value' unless defined $params->{name};
+    confess "Invalid \"errors\" value (stop|warn|pass|quiet):\n" . np( $params->{errors} )
+        if defined $params->{errors} && $params->{errors} !~ /^stop|warn|pass|quiet$/;
+    confess 'No "alias" value' unless defined $params->{alias};
     my $caller = caller;
     no strict 'refs';
-    *{"$caller\::$params->{name}"} = \&xa;
+    *{"$caller\::$params->{alias}"} = \&xa;
 }
 
 # -----------------------------------------------------------------------------
@@ -52,22 +52,22 @@ sub _xh
 }
 
 # -----------------------------------------------------------------------------
-# Check key type. Show error if type is invalid. 
+# Check key type. Show error if type is invalid.
 # Set values from key if type is HASH.
 # -----------------------------------------------------------------------------
 sub _set_value
 {
     my ( $rc, $data, $i ) = @_;
-    
+
     my $ref = ref $data->[$i];
     if ($ref) {
         if ( $ref eq 'HASH' ) {
-            _xe('Arguments after HASH defaults are disabled') if exists $data->[$i+1];
+            _xe('Arguments after HASH defaults are disabled') if exists $data->[ $i + 1 ];
             return _xh( $rc, $data->[$i] );
         }
         _xe("Key can not be $ref type");
     }
-    _xe( 'Odd HASH elements passed') unless exists $data->[ $i + 1 ];
+    _xe('Odd HASH elements passed') unless exists $data->[ $i + 1 ];
     $rc->{ $data->[$i] } //= $data->[ $i + 1 ];
     return;
 }
@@ -182,6 +182,14 @@ Version 1.002
 =item xa( I<@_> [, defaults ] )
 
 =back
+
+=head1 CUSTOMIZATION
+
+    use Xa 
+        # export 'my_extract_arguments' function instead 'xa':
+        alias =>  'my_extract_arguments',  
+        # errors handling ('quiet' == 'pass'):
+        errors => (stop|warn|pass|quiet)
 
 =head1 BUGS AND LIMITATIONS
 
