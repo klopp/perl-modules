@@ -209,8 +209,8 @@ WIP
     use Xa 
         # export 'my_extract_arguments' function instead 'xa':
         alias =>  'my_extract_arguments',  
-        # errors handling ('quiet' == 'pass'):
-        errors => (stop|warn|pass|quiet)
+        # errors handling (stop|warn|pass|quiet, quiet == pass):
+        errors => 'stop'
 
 =head1 DIAGNOSTICS
 
