@@ -52,8 +52,8 @@ sub _xh
 }
 
 # -----------------------------------------------------------------------------
-# Check key type. Trigger error if type is invalid. 
-# Set values from key if type is HASH
+# Check key type. Show error if type is invalid. 
+# Set values from key if type is HASH.
 # -----------------------------------------------------------------------------
 sub _set_value
 {
@@ -132,12 +132,9 @@ sub xa
                 _xe( 'Arguments after HASH defaults are disabled', @_ ) if exists $_[1];
                 return _xh( $self, $_[0] );
             }
-            else {
-                return _xha( $self, \@_ );
-            }
         }
     }
-    return %{$self};
+    return _xha( $self, \@_ );
 }
 
 # -----------------------------------------------------------------------------
