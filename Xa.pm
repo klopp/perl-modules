@@ -31,7 +31,7 @@ sub import
     confess "Wrong \"errors\" value $EP:\n" . np( $p->{errors} )
         if defined $p->{errors} && $p->{errors} !~ $EP;
     confess 'No "alias" value' unless defined $p->{alias};
-    confess "Wrong \"alias\" value $AP" unless $p->{alias} =~ $AP;
+    confess "Wrong \"alias\" value $AP\n" . np( $p->{alias} ) unless $p->{alias} =~ $AP;
     my $caller = caller;
     no strict 'refs';
     *{"$caller\::$p->{alias}"} = \&xa;
