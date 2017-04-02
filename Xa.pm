@@ -1,16 +1,16 @@
 package Xa;
 
 # -----------------------------------------------------------------------------
-use Modern::Perl;
+use strict;
+use warnings;
 use Data::Printer;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
-$VERSION = '1.003';
-
+$VERSION = '1.004';
 use Readonly;
-Readonly::Scalar my $AP => qr/\A[^\W0-9]\w*\z/;
-Readonly::Scalar my $EP => qr/\A(stop|warn|pass|quiet)\z/;
+Readonly::Scalar my $AP => qr/\A[^\W\d]\w*\z/;
+Readonly::Hash my %EP => map { $_ => 1 } qw/stop warn pass quiet/;
 
 # -----------------------------------------------------------------------------
 my $p = {
@@ -27,10 +27,11 @@ sub import
     confess __PACKAGE__ . " can receive HASH or HASH reference only, but got:\n" . np($args)
         unless ref $args eq 'HASH';
     $p->{$_} = $args->{$_} for keys %{$args};
-    confess "Wrong \"errors\" value $EP:\n" . np( $p->{errors} )
-        if defined $p->{errors} && $p->{errors} !~ $EP;
+    confess 'Wrong "errors" value ' . join( q{|}, keys %EP ) . q{:} . np( $p->{errors} )
+        if defined $p->{errors} && !exists $EP{ $p->{errors} };
     confess 'No "alias" value' unless defined $p->{alias};
-    confess "Wrong \"alias\" value $AP\n" . np( $p->{alias} ) unless $p->{alias} =~ $AP;
+    confess "Wrong \"alias\" value $AP\n" . np( $p->{alias} )
+        unless $p->{alias} =~ $AP;
     my $caller = caller;
     no strict 'refs';
     *{"$caller\::$p->{alias}"} = \&xa;
@@ -39,8 +40,8 @@ sub import
 # -----------------------------------------------------------------------------
 sub _xa_error
 {
-    my $msg = shift . ':';
-    $msg .= ( @_ ? "\n" . np(@_) : '' );
+    my $msg = shift . q{:};
+    $msg .= ( @_ ? "\n" . np(@_) : q{} );
     confess $msg if $p->{errors} eq 'stop';
     cluck $msg   if $p->{errors} eq 'warn';
     return;
@@ -74,7 +75,8 @@ sub _xa_set_value
     my $ref = ref $data->[$i];
     if ($ref) {
         if ( $ref eq 'HASH' ) {
-            _xa_error('Arguments after HASH defaults are disabled') if exists $data->[ $i + 1 ];
+            _xa_error('Arguments after HASH defaults are disabled')
+                if exists $data->[ $i + 1 ];
             return _xa_defaults_from_hash( $rc, $data->[$i] );
         }
         _xa_error("Key can not be $ref type");
@@ -134,14 +136,15 @@ sub xa
     else {
         return () unless defined $self;
 
-        unless ( ref $self eq 'HASH' ) {
+        if ( ref $self ne 'HASH' ) {
             unshift @_, $self;
             return _xa_data_from_array( \@_ );
         }
 
         if ( exists $_[0] ) {
             if ( ref $_[0] eq 'HASH' ) {
-                _xa_error( 'Arguments after HASH defaults are disabled', @_ ) if exists $_[1];
+                _xa_error( 'Arguments after HASH defaults are disabled', @_ )
+                    if exists $_[1];
                 return _xa_defaults_from_hash( $self, $_[0] );
             }
         }
@@ -160,7 +163,7 @@ Xa - named function/method arguments extractor with default values.
 
 =head1 VERSION
 
-Version 1.003
+Version 1.004
 
 =head1 SYNOPSIS
 
@@ -185,6 +188,7 @@ Version 1.003
 
 =head1 DESCRIPTION
 
+WIP
 
 =head1 SUBROUTINES/METHODS
 
@@ -201,6 +205,14 @@ Version 1.003
         alias =>  'my_extract_arguments',  
         # errors handling ('quiet' == 'pass'):
         errors => (stop|warn|pass|quiet)
+
+=head1 DIAGNOSTICS
+
+WIP
+
+=head1 DEPENDENCIES
+
+    Readonly, Data::Printer, Scalar::Util, Carp, vars  
 
 =head1 BUGS AND LIMITATIONS
 
