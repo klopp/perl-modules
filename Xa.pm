@@ -7,10 +7,14 @@ use Data::Printer;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
-$VERSION = '1.002';
+$VERSION = '1.003';
+
+use Readonly;
+Readonly::Scalar my $AP => qr/\A[^\W0-9]\w*\z/;
+Readonly::Scalar my $EP => qr/\A(stop|warn|pass|quiet)\z/;
 
 # -----------------------------------------------------------------------------
-my $params = {
+my $p = {
     alias  => 'xa',
     errors => 'stop',
 };
@@ -20,15 +24,17 @@ sub import
 {
     my ( $class, $args ) = ( shift, {} );
     $args = @_ == 1 ? shift : {@_} if @_;
+
     confess __PACKAGE__ . " can receive HASH or HASH reference only, but got:\n" . np($args)
         unless ref $args eq 'HASH';
-    $params->{$_} = $args->{$_} for keys %{$args};
-    confess "Invalid \"errors\" value (stop|warn|pass|quiet):\n" . np( $params->{errors} )
-        if defined $params->{errors} && $params->{errors} !~ /^stop|warn|pass|quiet$/;
-    confess 'No "alias" value' unless defined $params->{alias};
+    $p->{$_} = $args->{$_} for keys %{$args};
+    confess "Wrong \"errors\" value $EP:\n" . np( $p->{errors} )
+        if defined $p->{errors} && $p->{errors} !~ $EP;
+    confess 'No "alias" value' unless defined $p->{alias};
+    confess "Wrong \"alias\" value $AP" unless $p->{alias} =~ $AP;
     my $caller = caller;
     no strict 'refs';
-    *{"$caller\::$params->{alias}"} = \&xa;
+    *{"$caller\::$p->{alias}"} = \&xa;
 }
 
 # -----------------------------------------------------------------------------
@@ -36,8 +42,8 @@ sub _xa_error
 {
     my $msg = shift . ':';
     $msg .= ( @_ ? "\n" . np(@_) : '' );
-    confess $msg if $params->{errors} eq 'stop';
-    cluck $msg   if $params->{errors} eq 'warn';
+    confess $msg if $p->{errors} eq 'stop';
+    cluck $msg   if $p->{errors} eq 'warn';
     return;
 }
 
@@ -48,7 +54,7 @@ sub _xa_defaults_from_hash
 {
     my ( $rc, $defaults ) = @_;
     for ( keys %{$defaults} ) {
-        next if exists $rc->{$_}; 
+        next if exists $rc->{$_};
         my $ref = ref $defaults->{$_};
         _xa_error("Key can not be $ref type") if $ref;
         $rc->{$_} = $defaults->{$_};
@@ -155,7 +161,7 @@ Xa - named function/method arguments extractor with default values.
 
 =head1 VERSION
 
-Version 1.002
+Version 1.003
 
 =head1 SYNOPSIS
 
