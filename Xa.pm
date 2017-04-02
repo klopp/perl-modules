@@ -47,7 +47,12 @@ sub _xe
 sub _xh
 {
     my ( $rc, $defaults ) = @_;
-    $rc->{$_} //= $defaults->{$_} for keys %{$defaults};
+    for( keys %{$defaults} )
+    {
+        my $ref = ref $defaults->{$_};
+        _xe("Key can not be $ref type") if $ref;
+        $rc->{$_} //= $defaults->{$_};
+    }        
     return %{$rc};
 }
 
