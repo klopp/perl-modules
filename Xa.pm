@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Readonly;
 use Data::Printer;
-use Scalar::Util qw/blessed/;
+use Scalar::Util qw/blessed dualvar/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
 $VERSION = '1.004';
@@ -14,9 +14,9 @@ Readonly::Hash my %EP => map { $_ => 1 } qw/stop warn pass quiet/;
 
 # -----------------------------------------------------------------------------
 my $p = {
-    alias      => 'xa',
-    errors     => 'stop',
-    undefined  => undef,
+    alias     => 'xa',
+    errors    => 'stop',
+    undefined => dualvar( 0, '' ),
 };
 
 # -----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ sub _xa_defaults_from_array
 }
 
 # -----------------------------------------------------------------------------
-# Extract values from @args without redefinition
+# Extract values from @args
 # -----------------------------------------------------------------------------
 sub _xa_data_from_array
 {
@@ -231,8 +231,8 @@ WIP
         alias     =>  'my_extract_arguments',  
         # errors handling (stop|warn|pass|quiet, quiet == pass):
         errors    => 'stop'
-        # set undefined keys to (default: undef):
-        undefined => ''
+        # set undefined keys to, default: dualvar(0,''):
+        undefined => undef
 
 =head1 DIAGNOSTICS
 
