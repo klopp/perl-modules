@@ -8,7 +8,7 @@ use Data::Printer;
 use Scalar::Util qw/blessed dualvar/;
 use Carp qw/confess cluck/;
 use vars qw/$VERSION/;
-$VERSION = '1.004';
+$VERSION = '1.005';
 Readonly::Scalar my $AP => qr/\A[^\W\d]\w*\z/;
 Readonly::Hash my %EP => map { $_ => 1 } qw/stop warn pass quiet/;
 
@@ -188,7 +188,7 @@ Xa - named function/method arguments extractor with default values.
 
 =head1 VERSION
 
-Version 1.004
+Version 1.005
 
 =head1 SYNOPSIS
 
