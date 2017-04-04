@@ -247,7 +247,7 @@ WIP
         errors    => 'stop'
         # apply defaults to undefined values, default NO (undef):
         defaults_for_undef => 1,
-        # replace undefined values to, default: dualvar(0,''):
+        # replace undefined values, default dualvar(0,''), undef to disable:
         replace_undef    => undef
 
 =head1 DIAGNOSTICS
