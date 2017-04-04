@@ -14,9 +14,10 @@ Readonly::Hash my %EP => map { $_ => 1 } qw/stop warn pass quiet/;
 
 # -----------------------------------------------------------------------------
 my $p = {
-    alias     => 'xa',
-    errors    => 'stop',
-    undefined => dualvar( 0, '' ),
+    alias            => 'xa',
+    errors           => 'stop',
+    undef_as_missing => undef,
+    missing_value    => dualvar( 0, '' ),
 };
 
 # -----------------------------------------------------------------------------
@@ -68,7 +69,8 @@ sub _xa_defaults_from_hash
     my ( $rc, $defaults ) = @_;
 
     for ( keys %{$defaults} ) {
-        next if exists $rc->{$_};
+        next if !$p->{undef_as_missing} && exists $rc->{$_};
+        next if $p->{undef_as_missing}  && defined $rc->{$_};
         my $ref = ref $defaults->{$_};
         _xa_error("Defaults key can not be '$ref' type") if $ref;
         $rc->{$_} = $defaults->{$_};
@@ -81,9 +83,9 @@ sub _xa_finalize_data
 {
     my ($rc) = @_;
 
-    if ( defined $p->{undefined} ) {
+    if ( defined $p->{missing_value} ) {
         for ( keys %{$rc} ) {
-            $rc->{$_} = $p->{undefined} unless defined $rc->{$_};
+            $rc->{$_} = $p->{missing_value} unless defined $rc->{$_};
         }
     }
     return %{$rc};
@@ -243,8 +245,10 @@ WIP
         alias     =>  'my_extract_arguments',  
         # errors handling (stop|warn|pass|quiet, quiet == pass):
         errors    => 'stop'
-        # set undefined keys to, default: dualvar(0,''):
-        undefined => undef
+        # assume undefined values as missing:
+        undef_as_missing => undef,
+        # set missing values to, default: dualvar(0,''):
+        missing_value    => undef
 
 =head1 DIAGNOSTICS
 
